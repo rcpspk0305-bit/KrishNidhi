@@ -3,9 +3,15 @@ import { ArrowRight, Cpu, Landmark, Sprout, Waves } from "lucide-react";
 
 const quickLinks = [
   {
-    title: "Interactive Dashboard",
+    title: "AI Smart Plant Monitor & Automated Irrigation",
+    href: "/plant-monitor",
+    desc: "ESP8266 NodeMCU live telemetry, DHT11 & soil moisture sensing, remote pump relay actuator, and AI agronomy.",
+    icon: Sprout,
+  },
+  {
+    title: "Interactive Farm Dashboard",
     href: "/login",
-    desc: "Live telemetry, crop recommendations, smart alerts, and operator actions in one workspace.",
+    desc: "Live field telemetry, crop recommendations, smart alerts, and operator actions in one workspace.",
     icon: Cpu,
   },
   {
@@ -23,15 +29,19 @@ export default function HomePage() {
         <section className="hero-grid">
           <div className="hero-card glass">
             <span className="badge">
-              <Sprout size={14} /> Agritech control center
+              <Sprout size={14} /> AI-Powered IoT Smart Farming
             </span>
-            <h1 className="title-xl">KrishiNidhi</h1>
+            <h1 className="title-xl">KrishiNidhi & Smart Plant Monitor</h1>
             <p className="muted" style={{ maxWidth: 680, fontSize: 18 }}>
-              A cleaner workflow for your frontend: one landing page, one dashboard route, one scheme finder route, and reusable components for metrics, charts, and recommendations.
+              Intelligent IoT plant monitoring and automated fail-safe irrigation with ESP8266 NodeMCU, DHT11, calibrated soil moisture, PIR motion detection, and real-time Server-Sent Events.
             </p>
             <div className="row" style={{ marginTop: 18 }}>
-              <Link href="/login" className="cta">Get started</Link>
-              <Link href="/scheme-finder" className="ghost">Open schemes</Link>
+              <Link href="/plant-monitor" className="cta" style={{ background: "linear-gradient(135deg, #16a34a, #15803d)" }}>
+                Launch Smart Plant Monitor
+              </Link>
+              <Link href="/dashboard" className="ghost">
+                Field Operations
+              </Link>
             </div>
           </div>
 

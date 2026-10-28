@@ -1,0 +1,62 @@
+{
+  "rice_paddy": {
+    "device_id": "esp32-wetland-01",
+    "temperature": 28.5,
+    "humidity": 82.0,
+    "ph": 6.4,
+    "rainfall": 185.0,
+    "tds": 175.0,
+    "N": 92.0,
+    "P": 46.0,
+    "K": 40.0,
+    "description": "High humidity, abundant rainfall - optimal for Rice cultivation"
+  },
+  "potato_field": {
+    "device_id": "esp32-highland-02",
+    "temperature": 18.2,
+    "humidity": 62.0,
+    "ph": 5.4,
+    "rainfall": 75.0,
+    "tds": 125.0,
+    "N": 72.0,
+    "P": 58.0,
+    "K": 65.0,
+    "description": "Cooler temperature, mildly acidic soil - optimal for Potato tubers"
+  },
+  "cotton_dryland": {
+    "device_id": "esp32-arid-03",
+    "temperature": 33.8,
+    "humidity": 42.0,
+    "ph": 7.3,
+    "rainfall": 35.0,
+    "tds": 240.0,
+    "N": 68.0,
+    "P": 38.0,
+    "K": 58.0,
+    "description": "Warm climate, lower humidity - optimal for Cotton boll development"
+  },
+  "maize_field": {
+    "device_id": "esp32-plains-04",
+    "temperature": 26.4,
+    "humidity": 66.0,
+    "ph": 6.7,
+    "rainfall": 92.0,
+    "tds": 150.0,
+    "N": 115.0,
+    "P": 55.0,
+    "K": 48.0,
+    "description": "Rich nitrogen profile, moderate precipitation - optimal for Maize corn"
+  },
+  "wheat_field": {
+    "device_id": "esp32-temperate-05",
+    "temperature": 21.5,
+    "humidity": 52.0,
+    "ph": 6.8,
+    "rainfall": 60.0,
+    "tds": 138.0,
+    "N": 65.0,
+    "P": 42.0,
+    "K": 42.0,
+    "description": "Temperate weather, balanced nutrients - optimal for Wheat grass"
+  }
+}

@@ -133,7 +133,11 @@ export default function DashboardPage() {
                 </div>
               </SummaryContent>
             ) : metric ? (
-              <MetricContent metric={metric} value={data.current[metric.valueKey as keyof typeof data.current]} series={series} />
+              <MetricContent 
+                metric={metric} 
+                value={typeof data.current[metric.valueKey as keyof typeof data.current] === "number" ? Number(data.current[metric.valueKey as keyof typeof data.current]) : 0} 
+                series={series} 
+              />
             ) : (
               <SummaryContent
                 title={summaryTabs.find((tab) => tab.id === activeTab)?.label ?? "Summary"}

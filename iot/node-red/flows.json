@@ -1,0 +1,97 @@
+[
+  {
+    "id": "tab_agritech_iot",
+    "type": "tab",
+    "label": "AgriTech IoT Pipeline",
+    "disabled": false,
+    "info": "Subscribes to HiveMQ MQTT broker and forwards telemetry to AgriTech backend."
+  },
+  {
+    "id": "mqtt_broker_hivemq",
+    "type": "mqtt-broker",
+    "name": "HiveMQ Public Broker",
+    "broker": "broker.hivemq.com",
+    "port": "1883",
+    "clientid": "nodered-agritech-bridge",
+    "autoConnect": true,
+    "usetls": false,
+    "protocolVersion": "4",
+    "keepalive": "60",
+    "cleansession": true,
+    "autoUnsubscribe": true
+  },
+  {
+    "id": "node_mqtt_in",
+    "type": "mqtt in",
+    "z": "tab_agritech_iot",
+    "name": "HiveMQ Sensor Stream",
+    "topic": "agritech/ps10/sensors",
+    "qos": "0",
+    "datatype": "json",
+    "broker": "mqtt_broker_hivemq",
+    "nl": false,
+    "rap": true,
+    "rh": 0,
+    "x": 160,
+    "y": 140,
+    "wires": [
+      ["node_json_validate"]
+    ]
+  },
+  {
+    "id": "node_json_validate",
+    "type": "function",
+    "z": "tab_agritech_iot",
+    "name": "Format Telemetry Payload",
+    "func": "var data = msg.payload;\nif (typeof data === 'string') {\n    try {\n        data = JSON.parse(data);\n    } catch(e) {\n        node.error('Invalid JSON', msg);\n        return null;\n    }\n}\n\nmsg.headers = {\n    'Content-Type': 'application/json'\n};\n\nmsg.payload = {\n    device_id: data.device_id || 'nodered-gateway-01',\n    temperature: parseFloat(data.temperature || data.temp || 25.0),\n    humidity: parseFloat(data.humidity || data.hum || 50.0),\n    ph: parseFloat(data.ph || 6.5),\n    rainfall: parseFloat(data.rainfall || data.rain || 0.0),\n    tds: parseFloat(data.tds || 150.0),\n    N: parseFloat(data.N || data.n || 80.0),\n    P: parseFloat(data.P || data.p || 40.0),\n    K: parseFloat(data.K || data.k || 40.0)\n};\n\nreturn msg;",
+    "outputs": 1,
+    "noerr": 0,
+    "initialize": "",
+    "finalize": "",
+    "libs": [],
+    "x": 420,
+    "y": 140,
+    "wires": [
+      ["node_http_post", "node_debug_out"]
+    ]
+  },
+  {
+    "id": "node_http_post",
+    "type": "http request",
+    "z": "tab_agritech_iot",
+    "name": "Forward to Backend",
+    "method": "POST",
+    "ret": "obj",
+    "paytoqs": "ignore",
+    "url": "http://localhost:8000/iot/telemetry",
+    "tls": "",
+    "persist": false,
+    "proxy": "",
+    "insecureHTTPParser": false,
+    "authType": "",
+    "senderr": false,
+    "headers": [],
+    "x": 700,
+    "y": 140,
+    "wires": [
+      ["node_debug_out"]
+    ]
+  },
+  {
+    "id": "node_debug_out",
+    "type": "debug",
+    "z": "tab_agritech_iot",
+    "name": "IoT Debug Monitor",
+    "active": true,
+    "tosidebar": true,
+    "console": false,
+    "tostatus": false,
+    "complete": "payload",
+    "targetType": "msg",
+    "statusVal": "",
+    "statusType": "auto",
+    "x": 710,
+    "y": 220,
+    "wires": []
+  }
+]

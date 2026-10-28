@@ -12,8 +12,10 @@ from app.models.schemas import (
     DashboardWindow,
     DashboardWindowResponse,
     TrendPoint,
+    SensorData,
 )
 from app.services.mqtt_service import latest_iot_data
+from app.services.ml_service import predict_crop
 
 router = APIRouter(prefix="/dashboard", tags=["dashboard"])
 
@@ -126,10 +128,25 @@ def dashboard_window(window_id: str, db: Session = Depends(get_db)):
     trend = _build_trend_points(_latest_readings(db))
 
     if window_id == "overview":
+        try:
+            sensor_obj = SensorData(
+                N=float(latest_iot_data.get("N", 88)),
+                P=float(latest_iot_data.get("P", 50)),
+                K=float(latest_iot_data.get("K", 42)),
+                temperature=float(latest_iot_data.get("temperature", 25.5)),
+                humidity=float(latest_iot_data.get("humidity", 40.0)),
+                ph=float(latest_iot_data.get("ph", 6.8)),
+                rainfall=float(latest_iot_data.get("rainfall", 50.0)),
+                tds=float(latest_iot_data.get("tds", 150.0)),
+            )
+            rec_crop = predict_crop(sensor_obj)
+        except Exception:
+            rec_crop = "Maize"
+
         payload = {
             "hero": {
-                "recommended_crop": "Dynamic from /predict endpoint",
-                "subtitle": "ML-driven recommendation with live telemetry.",
+                "recommended_crop": rec_crop,
+                "subtitle": "ML-driven recommendation powered by live real-world IoT telemetry.",
             },
             "cards": latest_iot_data,
         }

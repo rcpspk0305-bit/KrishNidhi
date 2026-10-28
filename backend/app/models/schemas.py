@@ -11,6 +11,32 @@ class SensorData(BaseModel):
     rainfall: float
     tds: float
 
+class IoTTelemetryInput(BaseModel):
+    temperature: Optional[float] = None
+    temp: Optional[float] = None
+    humidity: Optional[float] = None
+    hum: Optional[float] = None
+    ph: Optional[float] = None
+    rainfall: Optional[float] = None
+    rain: Optional[float] = None
+    tds: Optional[float] = None
+    N: Optional[float] = None
+    n: Optional[float] = None
+    P: Optional[float] = None
+    p: Optional[float] = None
+    K: Optional[float] = None
+    k: Optional[float] = None
+    device_id: Optional[str] = "esp32-node-01"
+
+class IoTStatusResponse(BaseModel):
+    status: str
+    connected: bool
+    device_id: str
+    source: str
+    last_packet_time: Optional[str] = None
+    packet_count: int
+    data: dict
+
 class GenAIRequest(BaseModel):
     crop: str
     disease: str

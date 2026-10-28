@@ -1,6 +1,9 @@
 from fastapi import APIRouter
 from pydantic import BaseModel
-from twilio.rest import Client
+try:
+    from twilio.rest import Client
+except ImportError:
+    Client = None
 from app.core.config import settings
 from app.services.llm_service import client_model
 
@@ -37,6 +40,8 @@ def send_sms(request: SMSRequest):
     except Exception as e:
         print("Translation error:", e)
 
+    if Client is None:
+        return {"status": "error", "message": "Twilio library not installed"}
     try:
         client = Client(settings.TWILIO_ACCOUNT_SID, settings.TWILIO_AUTH_TOKEN)
         message = client.messages.create(
