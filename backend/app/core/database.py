@@ -31,6 +31,36 @@ SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
 Base = declarative_base()
 
+
+def init_db():
+    """
+    Initializes database tables and ensures backwards-compatible schema
+    upgrades (idempotent column additions) for SQLite databases.
+    """
+    from sqlalchemy import text
+    Base.metadata.create_all(bind=engine)
+    if "sqlite" in SQLALCHEMY_DATABASE_URL:
+        try:
+            with engine.connect() as conn:
+                result = conn.execute(text("PRAGMA table_info(sensor_readings)"))
+                existing_cols = {row[1] for row in result.fetchall()}
+                if existing_cols:
+                    cols_to_add = {
+                        "device_id": "VARCHAR(64)",
+                        "soil_moisture": "FLOAT",
+                        "soil_raw": "INTEGER",
+                        "motion_detected": "BOOLEAN DEFAULT 0",
+                        "pump_on": "BOOLEAN DEFAULT 0",
+                        "control_mode": "VARCHAR(16) DEFAULT 'AUTO'",
+                    }
+                    for col_name, col_type in cols_to_add.items():
+                        if col_name not in existing_cols:
+                            conn.execute(text(f"ALTER TABLE sensor_readings ADD COLUMN {col_name} {col_type}"))
+                    conn.commit()
+        except Exception:
+            pass
+
+
 def get_db():
     """
     Dependency to be used in FastAPI routes to get a database session.

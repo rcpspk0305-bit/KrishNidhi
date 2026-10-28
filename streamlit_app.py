@@ -14,20 +14,23 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), 'backend
 
 # Import from backend application
 try:
-    from app.core.database import engine, SessionLocal
+    from app.core.database import engine, SessionLocal, init_db
     from app.models import db_models
     from app.services.ml_service import predict_crop
     from app.services.llm_service import generate_action_plan, generate_chat_response, client_model
     from app.services.vision_service import detect_disease_from_image
     from app.models.schemas import SensorData, GenAIRequest, ChatRequest
     from app.core.config import settings
-    from app.services.mqtt_service import latest_iot_data
+    from app.services.mqtt_service import latest_iot_data, iot_metadata, start_mqtt_background
 except ImportError as e:
     st.error(f"Failed to import backend modules. Make sure you run streamlit from the project root. Error: {e}")
     st.stop()
 
-# Initialize DB tables
-db_models.Base.metadata.create_all(bind=engine)
+# Initialize DB tables and schema migrations
+init_db()
+
+# Ensure MQTT background subscriber is active
+start_mqtt_background()
 
 # Helper function to get database session
 def get_db():
@@ -253,45 +256,97 @@ if "notifications" not in st.session_state:
 if app_mode == "📊 Real-time Dashboard":
     st.subheader("Interactive Telemetry & Analytics")
     
-    # Simulate data controls
-    col_ctr, col_state = st.columns([2, 1])
-    with col_ctr:
-        st.write("Adjust sensor sliders to test live ML recommendations and dashboard graphs.")
-        
-    with col_state:
-        # Save simulated data button
-        if st.button("🔄 Push Live Reading to DB"):
-            db = get_db()
-            new_reading = db_models.SensorReading(
-                temperature=latest_iot_data["temperature"],
-                humidity=latest_iot_data["humidity"],
-                ph=latest_iot_data["ph"],
-                rainfall=latest_iot_data["rainfall"],
-                n=latest_iot_data["N"],
-                p=latest_iot_data["P"],
-                k=latest_iot_data["K"],
-                tds=latest_iot_data["tds"]
-            )
-            db.add(new_reading)
-            db.commit()
-            add_notification(f"Manual telemetry reading written. Temp: {latest_iot_data['temperature']}°C")
-            st.success("Reading successfully pushed to Database!")
-            st.rerun()
+    # Telemetry source selector
+    telemetry_mode = st.radio(
+        "Telemetry Source",
+        ["🛰️ Real-World Live IoT Stream", "🧪 Manual Telemetry Simulator"],
+        horizontal=True,
+        label_visibility="collapsed"
+    )
 
-    # Create sliders for real-time adjustments
-    col_s1, col_s2, col_s3, col_s4 = st.columns(4)
-    with col_s1:
-        latest_iot_data["temperature"] = round(st.slider("Temperature (°C)", 10.0, 50.0, float(latest_iot_data["temperature"]), 0.1), 1)
-        latest_iot_data["N"] = round(st.slider("Nitrogen (N)", 0.0, 140.0, float(latest_iot_data["N"]), 1.0), 1)
-    with col_s2:
-        latest_iot_data["humidity"] = round(st.slider("Humidity (%)", 20.0, 100.0, float(latest_iot_data["humidity"]), 0.1), 1)
-        latest_iot_data["P"] = round(st.slider("Phosphorus (P)", 5.0, 140.0, float(latest_iot_data["P"]), 1.0), 1)
-    with col_s3:
-        latest_iot_data["ph"] = round(st.slider("Soil pH", 3.0, 10.0, float(latest_iot_data["ph"]), 0.1), 2)
-        latest_iot_data["K"] = round(st.slider("Potassium (K)", 5.0, 200.0, float(latest_iot_data["K"]), 1.0), 1)
-    with col_s4:
-        latest_iot_data["rainfall"] = round(st.slider("Rainfall (mm)", 20.0, 300.0, float(latest_iot_data["rainfall"]), 0.1), 1)
-        latest_iot_data["tds"] = round(st.slider("Water TDS (ppm)", 0.0, 500.0, float(latest_iot_data.get("tds", 150.0)), 1.0), 1)
+    if telemetry_mode == "🛰️ Real-World Live IoT Stream":
+        is_live = iot_metadata.get("connected", False)
+        last_pkt = iot_metadata.get("last_packet_time")
+        status_color = "#00ffc4" if is_live else "#fbbf24"
+        status_text = "HARDWARE LIVE & TRANSMITTING" if is_live else "WAITING FOR HARDWARE TELEMETRY"
+        dev_id = iot_metadata.get("device_id", "esp32-node-01")
+        source_name = iot_metadata.get("source", "standby").upper()
+        pkt_cnt = iot_metadata.get("packet_count", 0)
+
+        col_badge, col_sync = st.columns([3, 1])
+        with col_badge:
+            st.markdown(f"""
+            <div style="background: rgba(18, 22, 38, 0.7); border: 1px solid rgba(255, 255, 255, 0.08); border-left: 4px solid {status_color}; border-radius: 12px; padding: 12px 18px; margin-bottom: 12px;">
+                <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px;">
+                    <div>
+                        <span style="display: inline-block; width: 8px; height: 8px; border-radius: 50%; background-color: {status_color}; margin-right: 6px; box-shadow: 0 0 8px {status_color};"></span>
+                        <b style="color: {status_color}; font-size: 0.85rem; letter-spacing: 0.05em;">{status_text}</b>
+                        <span style="color: #94a3b8; font-size: 0.85rem; margin-left: 8px;">| Device: <code style="color: #60a5fa;">{dev_id}</code></span>
+                        <span style="color: #94a3b8; font-size: 0.85rem; margin-left: 8px;">| Source: <span style="color: #c084fc;">{source_name}</span></span>
+                    </div>
+                    <div style="color: #94a3b8; font-size: 0.8rem;">
+                        Packets: <b style="color: white;">{pkt_cnt}</b> | Last Seen: <b style="color: white;">{last_pkt[-8:] if last_pkt else 'Never'}</b>
+                    </div>
+                </div>
+            </div>
+            """, unsafe_allow_html=True)
+
+        with col_sync:
+            if st.button("🔄 Sync Telemetry", use_container_width=True):
+                st.rerun()
+
+        with st.expander("🔌 Quick Hardware Ingestion & Terminal Test Command"):
+            st.markdown("""
+            **1. HTTP Ingestion Endpoint (POST):**
+            ```bash
+            curl -X POST http://localhost:8000/iot/telemetry -H "Content-Type: application/json" -d '{"device_id": "esp32-field-01", "temperature": 28.4, "humidity": 65.0, "ph": 6.8, "N": 92, "P": 48, "K": 45, "rainfall": 55.0, "tds": 145}'
+            ```
+            **2. MQTT Ingestion Broker:**
+            - **Broker**: `broker.hivemq.com:1883`
+            - **Topic**: `agritech/ps10/sensors`
+            - **Sample JSON**: `{"device_id": "esp32-node-01", "temperature": 27.5, "humidity": 60, "ph": 6.5, "N": 85, "P": 50, "K": 40}`
+            - **Firmware code**: Check `iot/esp32/esp32_mqtt.ino` and `iot/esp32/sensor_readings.ino`.
+            """)
+    else:
+        # Simulate data controls
+        col_ctr, col_state = st.columns([2, 1])
+        with col_ctr:
+            st.write("Adjust sensor sliders to test live ML recommendations and dashboard graphs.")
+            
+        with col_state:
+            # Save simulated data button
+            if st.button("🔄 Push Live Reading to DB"):
+                db = get_db()
+                new_reading = db_models.SensorReading(
+                    temperature=latest_iot_data["temperature"],
+                    humidity=latest_iot_data["humidity"],
+                    ph=latest_iot_data["ph"],
+                    rainfall=latest_iot_data["rainfall"],
+                    n=latest_iot_data["N"],
+                    p=latest_iot_data["P"],
+                    k=latest_iot_data["K"],
+                    tds=latest_iot_data["tds"]
+                )
+                db.add(new_reading)
+                db.commit()
+                add_notification(f"Manual telemetry reading written. Temp: {latest_iot_data['temperature']}°C")
+                st.success("Reading successfully pushed to Database!")
+                st.rerun()
+
+        # Create sliders for real-time adjustments
+        col_s1, col_s2, col_s3, col_s4 = st.columns(4)
+        with col_s1:
+            latest_iot_data["temperature"] = round(st.slider("Temperature (°C)", 10.0, 50.0, float(latest_iot_data["temperature"]), 0.1), 1)
+            latest_iot_data["N"] = round(st.slider("Nitrogen (N)", 0.0, 140.0, float(latest_iot_data["N"]), 1.0), 1)
+        with col_s2:
+            latest_iot_data["humidity"] = round(st.slider("Humidity (%)", 20.0, 100.0, float(latest_iot_data["humidity"]), 0.1), 1)
+            latest_iot_data["P"] = round(st.slider("Phosphorus (P)", 5.0, 140.0, float(latest_iot_data["P"]), 1.0), 1)
+        with col_s3:
+            latest_iot_data["ph"] = round(st.slider("Soil pH", 3.0, 10.0, float(latest_iot_data["ph"]), 0.1), 2)
+            latest_iot_data["K"] = round(st.slider("Potassium (K)", 5.0, 200.0, float(latest_iot_data["K"]), 1.0), 1)
+        with col_s4:
+            latest_iot_data["rainfall"] = round(st.slider("Rainfall (mm)", 20.0, 300.0, float(latest_iot_data["rainfall"]), 0.1), 1)
+            latest_iot_data["tds"] = round(st.slider("Water TDS (ppm)", 0.0, 500.0, float(latest_iot_data.get("tds", 150.0)), 1.0), 1)
 
     st.markdown("---")
 
