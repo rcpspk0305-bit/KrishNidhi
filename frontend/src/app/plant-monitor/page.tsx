@@ -181,6 +181,7 @@ export default function PlantMonitorPage() {
           recommendation={recommendation}
           latest={telemetry}
           loading={loading}
+          deviceStatus={deviceStatus}
         />
 
         {/* 4 Core Sensor Telemetry Cards */}
@@ -194,6 +195,8 @@ export default function PlantMonitorPage() {
             confirmedPumpOn={deviceStatus?.pump_state ?? false}
             currentMode={deviceStatus?.control_mode ?? "AUTO"}
             onCommandDispatched={refreshAllData}
+            lastWateringTime={deviceStatus?.last_watering_time}
+            pumpRuntimeSeconds={deviceStatus?.pump_runtime_seconds}
           />
 
           {/* AI Agronomic Insights */}

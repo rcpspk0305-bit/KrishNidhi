@@ -38,7 +38,15 @@ class PlantHealthEngine:
             return {
                 "health_score": 50,
                 "status": "No Telemetry",
+                "health_status": "Needs Attention",
                 "severity": "medium",
+                "reason": "No sensor telemetry received yet from the device.",
+                "recommendation": "Check ESP8266 power supply and Wi-Fi connection.",
+                "environmental_condition": "Awaiting Telemetry",
+                "moisture_assessment": "Sensor data pending",
+                "temperature_assessment": "Sensor data pending",
+                "humidity_assessment": "Sensor data pending",
+                "recommended_actions": ["Check ESP8266 power supply and Wi-Fi connection."],
                 "observations": ["No sensor data received yet from the device."],
                 "recommendations": ["Check ESP8266 power supply and Wi-Fi connection."],
                 "confidence": 0.50,
@@ -151,7 +159,7 @@ class PlantHealthEngine:
         # Final score normalization
         health_score = max(0, min(100, health_score))
         if health_score >= 80 and status not in ["Needs Water", "Over-watered"]:
-            status = "Thriving"
+            status = "Optimal"
             severity = "low"
         elif health_score < 60 and status == "Optimal":
             status = "Needs Attention"
@@ -160,10 +168,28 @@ class PlantHealthEngine:
         if not recommendations:
             recommendations.append("Current environmental conditions match the profile. Continue routine monitoring.")
 
+        # Determine primary reason and primary recommendation
+        primary_reason = observations[0] if observations else "Environmental parameters within nominal operating range."
+        primary_rec = recommendations[0] if recommendations else "Continue autonomous monitoring."
+
+        # Compute assessments
+        env_cond = f"{temp:.1f}°C, {humidity:.0f}% RH" if temp is not None and humidity is not None else "Sensor reading in progress"
+        moisture_eval = f"{soil_moisture:.1f}% ({'below target' if soil_moisture is not None and soil_moisture < min_moisture else 'optimal' if soil_moisture is not None and soil_moisture <= max_moisture else 'saturated' if soil_moisture is not None else 'N/A'})"
+        temp_eval = f"{temp:.1f}°C ({'optimal' if temp is not None and min_temp <= temp <= max_temp else 'warm' if temp is not None and temp > max_temp else 'cool' if temp is not None else 'N/A'})"
+        humid_eval = f"{humidity:.0f}% RH ({'optimal' if humidity is not None and 40 <= humidity <= 80 else 'abnormal' if humidity is not None else 'N/A'})"
+
         return {
             "health_score": health_score,
             "status": status,
+            "health_status": status,
             "severity": severity,
+            "reason": primary_reason,
+            "recommendation": primary_rec,
+            "environmental_condition": env_cond,
+            "moisture_assessment": moisture_eval,
+            "temperature_assessment": temp_eval,
+            "humidity_assessment": humid_eval,
+            "recommended_actions": recommendations,
             "observations": observations,
             "recommendations": recommendations,
             "confidence": 0.95,

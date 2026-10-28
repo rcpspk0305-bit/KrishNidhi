@@ -5,7 +5,7 @@ from sqlalchemy.orm import Session
 
 from app.core.database import get_db
 from app.core.security import hash_api_key, generate_device_api_key
-from app.models.db_models import Device, PlantProfile, Alert
+from app.models.db_models import Device, PlantProfile, Alert, PumpEvent
 from app.schemas.plant_monitor_schemas import (
     DeviceCreate,
     DeviceResponse,
@@ -101,6 +101,20 @@ def get_device_status(device_id: str, db: Session = Depends(get_db)):
         .count()
     )
 
+    last_pump_event = (
+        db.query(PumpEvent)
+        .filter(PumpEvent.device_id == device_id, PumpEvent.confirmed_state == True)
+        .order_by(PumpEvent.timestamp.desc())
+        .first()
+    )
+    last_watering = last_pump_event.timestamp if last_pump_event else None
+    pump_runtime = 0
+    if device.pump_state and last_pump_event and last_pump_event.timestamp:
+        event_time = last_pump_event.timestamp
+        if event_time.tzinfo is None:
+            event_time = event_time.replace(tzinfo=timezone.utc)
+        pump_runtime = int(max(0, (now - event_time).total_seconds()))
+
     return DeviceStatusResponse(
         device_id=device.id,
         status="online" if is_online else "offline",
@@ -111,6 +125,8 @@ def get_device_status(device_id: str, db: Session = Depends(get_db)):
         seconds_since_last_seen=seconds_ago,
         sensor_fault=False,
         active_alerts_count=active_alerts,
+        last_watering_time=last_watering,
+        pump_runtime_seconds=pump_runtime,
     )
 
 @router.get("/{device_id}/profile", response_model=PlantProfileResponse)

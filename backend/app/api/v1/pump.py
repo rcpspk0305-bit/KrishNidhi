@@ -1,7 +1,7 @@
 import uuid
 from datetime import datetime, timezone, timedelta
-from typing import Optional
-from fastapi import APIRouter, Depends, HTTPException, status
+from typing import Optional, List
+from fastapi import APIRouter, Depends, HTTPException, status, Query
 from sqlalchemy.orm import Session
 from sqlalchemy import desc
 
@@ -14,6 +14,7 @@ from app.schemas.plant_monitor_schemas import (
     CommandPollResponse,
     CommandAckRequest,
     CommandAckResponse,
+    PumpEventResponse,
 )
 from app.services.sse_service import sse_manager
 
@@ -151,7 +152,7 @@ def poll_pending_commands(
     )
 
     if not pending:
-        return CommandPollResponse(has_command=False, command=None)
+        return CommandPollResponse(has_command=False, command=None, command_id=None, pump=None, mode=None)
 
     cmd_item = DeviceCommandItem(
         command_id=pending.id,
@@ -161,7 +162,21 @@ def poll_pending_commands(
         expires_at=pending.expires_at,
         status=pending.status,
     )
-    return CommandPollResponse(has_command=True, command=cmd_item)
+
+    pump_val = None
+    mode_val = None
+    if pending.action == "SET_PUMP":
+        pump_val = str(pending.value).lower() in ["true", "1", "on"]
+    elif pending.action == "SET_MODE":
+        mode_val = str(pending.value).upper()
+
+    return CommandPollResponse(
+        has_command=True,
+        command=cmd_item,
+        command_id=pending.id,
+        pump=pump_val,
+        mode=mode_val,
+    )
 
 @router.post("/{device_id}/commands/{command_id}/ack", response_model=CommandAckResponse)
 async def acknowledge_command(
@@ -234,3 +249,25 @@ async def acknowledge_command(
         confirmed_state=device.pump_state,
         message=f"Command {command_id} acknowledged as {payload.status}",
     )
+
+@router.get("/{device_id}/pump/history", response_model=List[PumpEventResponse])
+def get_pump_history(
+    device_id: str,
+    limit: int = Query(50, ge=1, le=200),
+    db: Session = Depends(get_db),
+):
+    """
+    Returns the chronological record of pump actuation events (source, requested, confirmed, reason).
+    """
+    device = db.query(Device).filter(Device.id == device_id).first()
+    if not device:
+        raise HTTPException(status_code=404, detail="Device not found")
+
+    events = (
+        db.query(PumpEvent)
+        .filter(PumpEvent.device_id == device.id)
+        .order_by(desc(PumpEvent.timestamp))
+        .limit(limit)
+        .all()
+    )
+    return events

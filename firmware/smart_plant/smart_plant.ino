@@ -79,9 +79,10 @@ void loop() {
     // 5. Manage Wi-Fi Connection State
     updateWifiConnection();
 
-    // 6. Transmit Real-Time Telemetry to FastAPI Backend (every 5.0s)
-    if (currentMillis - timerLastTelemetry >= INTERVAL_TELEMETRY_MS) {
+    // 6. Transmit Real-Time Telemetry to FastAPI Backend (every 5.0s or immediately on state changes)
+    if (requestImmediateTelemetry || (currentMillis - timerLastTelemetry >= INTERVAL_TELEMETRY_MS)) {
         timerLastTelemetry = currentMillis;
+        requestImmediateTelemetry = false;
         sendTelemetry();
     }
 

@@ -129,7 +129,7 @@ cd frontend
 npm install
 npm run dev
 ```
-- Open your browser at: `http://localhost:3000/plant-monitor`
+- Open your browser at: `http://localhost:3000/dashboard` (or `http://localhost:3000/plant-monitor`)
 
 ### 3. Flash the ESP8266 NodeMCU Firmware
 1. Open `firmware/smart_plant/smart_plant.ino` in Arduino IDE.
@@ -137,8 +137,9 @@ npm run dev
    ```cpp
    #define WIFI_DEFAULT_SSID "Your_WiFi_SSID"
    #define WIFI_DEFAULT_PASS "Your_WiFi_Password"
-   #define SERVER_BASE_URL   "http://192.168.1.100:8000/api/v1"
+   #define SERVER_BASE_URL   "http://192.168.1.100:8000/api"
    ```
+   *(Note: The server supports both `/api` and `/api/v1` routes seamlessly)*
 3. Select board **NodeMCU 1.0 (ESP-12E Module)** and upload via USB at 115200 baud.
 
 ### 4. Run via Docker Compose (Alternative)
@@ -150,9 +151,9 @@ docker compose up --build -d
 
 ## 🧪 Verification & Testing Results
 
-- **Backend Automated Tests**: 14 out of 14 unit and integration tests passing (`pytest tests -v` in 9.28s) covering telemetry validation, API key security, threshold alerts, command polling, ACK confirmation, and VPD calculation.
-- **Frontend Build**: Next.js 16 build passed with 0 TypeScript errors.
-- **Hardware Simulator**: Tested in browser with live telemetry updates and command ACKs.
+- **Backend Automated Tests**: 20 out of 20 unit, integration, and workflow tests passing (`pytest tests -v` in 21.78s) covering direct ESP8266 telemetry ingestion, command polling, ACK confirmation, pump history tracking, API key security, threshold alerts, and deterministic VPD & health assessments.
+- **Frontend Build**: Next.js 16 Turbopack production build compiled with 0 TypeScript/ESLint errors.
+- **Hardware Simulator**: Tested in browser with live telemetry updates, mode toggles, and command ACKs.
 
 ---
 

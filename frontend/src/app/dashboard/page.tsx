@@ -1,184 +1,248 @@
 "use client";
 
-import { useMemo, useState, useEffect } from "react";
-import { Bell, Bot, MapPin, RefreshCw, Loader2 } from "lucide-react";
-import MetricContent from "@/components/MetricContent";
-import RecommendationCard from "@/components/RecommendationCard";
-import SensorCard from "@/components/SensorCard";
-import SummaryContent from "@/components/SummaryContent";
-import TabNavigation from "@/components/TabNavigation";
-import { metricTabs, sensorSummaries, summaryTabs } from "@/lib/dashboard-config";
-import { buildSeries, mockFieldData, summaryCards } from "@/lib/mock-data";
-import { getDashboardWindow } from "@/lib/api";
+import React, { useState, useEffect, useCallback } from "react";
+import Link from "next/link";
+import { ArrowLeft, RefreshCw, Sprout, ShieldCheck, HelpCircle, Activity, Landmark, Sparkles, Layers } from "lucide-react";
+import PlantHealthHero from "@/components/plant-monitor/PlantHealthHero";
+import SensorCardsGrid from "@/components/plant-monitor/SensorCardsGrid";
+import PumpControlWidget from "@/components/plant-monitor/PumpControlWidget";
+import TelemetryTrendsChart from "@/components/plant-monitor/TelemetryTrendsChart";
+import AIRecommendationsCard from "@/components/plant-monitor/AIRecommendationsCard";
+import DeviceStatusBadge from "@/components/plant-monitor/DeviceStatusBadge";
+import AlertsDrawer from "@/components/plant-monitor/AlertsDrawer";
+import HardwareSimulatorPanel from "@/components/plant-monitor/HardwareSimulatorPanel";
+
+import { plantApi } from "@/lib/plant-api";
+import { usePlantMonitorSSE } from "@/hooks/usePlantMonitorSSE";
+import {
+  PlantTelemetry,
+  PlantDeviceStatus,
+  PlantRecommendation,
+  PlantAlert,
+} from "@/types/plant-monitor";
 
 export default function DashboardPage() {
-  const [activeTab, setActiveTab] = useState("overview");
-  const [data, setData] = useState(mockFieldData);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const [deviceId] = useState<string>("esp8266-plant-01");
+  const [telemetry, setTelemetry] = useState<PlantTelemetry | null>(null);
+  const [history, setHistory] = useState<PlantTelemetry[]>([]);
+  const [deviceStatus, setDeviceStatus] = useState<PlantDeviceStatus | null>(null);
+  const [recommendation, setRecommendation] = useState<PlantRecommendation | null>(null);
+  const [alerts, setAlerts] = useState<PlantAlert[]>([]);
+  const [loading, setLoading] = useState<boolean>(true);
+  const [syncing, setSyncing] = useState<boolean>(false);
 
-  const fetchData = async () => {
-    setLoading(true);
+  // Load all initial data from REST API
+  const refreshAllData = useCallback(async () => {
+    setSyncing(true);
     try {
-      const windowData = await getDashboardWindow("overview");
-      if (windowData.status === "success") {
-        setData({
-          cropPrediction: windowData.payload.hero.recommended_crop,
-          current: windowData.payload.cards,
-        });
-      }
-      setError(null);
+      const [latestRes, historyRes, statusRes, recRes, alertsRes] = await Promise.allSettled([
+        plantApi.getLatestTelemetry(deviceId),
+        plantApi.getTelemetryHistory(deviceId, 24, 60),
+        plantApi.getDeviceStatus(deviceId),
+        plantApi.getRecommendations(deviceId),
+        plantApi.getAlerts(deviceId),
+      ]);
+
+      if (latestRes.status === "fulfilled") setTelemetry(latestRes.value);
+      if (historyRes.status === "fulfilled") setHistory(historyRes.value);
+      if (statusRes.status === "fulfilled") setDeviceStatus(statusRes.value);
+      if (recRes.status === "fulfilled") setRecommendation(recRes.value);
+      if (alertsRes.status === "fulfilled") setAlerts(alertsRes.value);
     } catch (err) {
-      console.error("Failed to fetch dashboard data:", err);
-      setError("Backend connection failed. Using cached data.");
+      console.warn("Telemetry refresh warning:", err);
     } finally {
       setLoading(false);
+      setSyncing(false);
     }
-  };
+  }, [deviceId]);
 
   useEffect(() => {
-    fetchData();
-  }, []);
+    refreshAllData();
+    // Poll fallback every 15s in case SSE is temporarily suspended
+    const interval = setInterval(refreshAllData, 15000);
+    return () => clearInterval(interval);
+  }, [refreshAllData]);
 
-  const metric = metricTabs.find((item) => item.id === activeTab);
-  const series = useMemo(() => metric ? buildSeries(metric.id, data.current) : [], [metric, data]);
+  // Connect to live Server-Sent Events (SSE)
+  const { isConnected: sseConnected, lastEventTime } = usePlantMonitorSSE({
+    deviceId,
+    onTelemetry: (newTelemetry) => {
+      setTelemetry(newTelemetry);
+      setHistory((prev) => [...prev.slice(-59), newTelemetry]);
+      setDeviceStatus((prev) =>
+        prev
+          ? {
+              ...prev,
+              online: true,
+              pump_state: newTelemetry.pump_on,
+              control_mode: newTelemetry.control_mode,
+              last_seen: newTelemetry.timestamp,
+              seconds_since_last_seen: 0,
+            }
+          : null
+      );
+    },
+    onPumpStateUpdated: (data) => {
+      setDeviceStatus((prev) =>
+        prev
+          ? {
+              ...prev,
+              pump_state: data.confirmed_state,
+              control_mode: data.control_mode as any,
+              last_watering_time: data.confirmed_state ? (data.timestamp || new Date().toISOString()) : prev.last_watering_time,
+            }
+          : null
+      );
+    },
+    onCommandCreated: () => {
+      // Command placed in queue
+    },
+  });
 
   return (
-    <main className="section">
-      <div className="topbar">
-        <div className="page-shell nav-row">
-          <div>
-            <div className="badge"><Bot size={14} /> Smart farming dashboard</div>
-            <h1 className="title-lg" style={{ marginTop: 10 }}>KrishiNidhi Operations</h1>
-          </div>
-          <div className="glass" style={{ borderRadius: 18, padding: "12px 14px", display: "flex", alignItems: "center", gap: 10 }}>
-            <MapPin size={16} /> Hyderabad, Telangana
-          </div>
-          <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-            <button 
-              className="ghost" 
-              type="button" 
-              onClick={fetchData} 
-              disabled={loading}
-            >
-              {loading ? <Loader2 size={16} className="animate-spin" /> : <RefreshCw size={16} style={{ marginRight: 8, verticalAlign: "middle" }} />} 
-              {loading ? "Refreshing..." : "Refresh"}
-            </button>
-            <button 
-              className="badge" 
-              style={{ cursor: "pointer", background: "rgba(255,255,255,0.05)" }}
-              onClick={() => {
-                localStorage.removeItem("auth_token");
-                window.location.href = "/login";
+    <main
+      style={{
+        minHeight: "100vh",
+        background: "radial-gradient(ellipse at top, #064e3b 0%, #022c22 40%, #090d16 100%)",
+        color: "#f8fafc",
+        padding: "32px 20px 80px 20px",
+        fontFamily: "'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif",
+      }}
+    >
+      <div style={{ maxWidth: "1280px", margin: "0 auto", display: "flex", flexDirection: "column", gap: "24px" }}>
+        
+        {/* Navigation & Status Header */}
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "16px" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: "14px" }}>
+            <Link
+              href="/"
+              style={{
+                display: "inline-flex",
+                alignItems: "center",
+                gap: "6px",
+                color: "#94a3b8",
+                textDecoration: "none",
+                fontSize: "13px",
+                fontWeight: 500,
+                padding: "8px 12px",
+                borderRadius: "10px",
+                background: "rgba(255, 255, 255, 0.05)",
+                border: "1px solid rgba(255, 255, 255, 0.1)",
               }}
             >
-              Logout
+              <ArrowLeft size={16} /> Home
+            </Link>
+            <div>
+              <div style={{ fontSize: "12px", color: "#4ade80", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.05em" }}>
+                AI-Powered Smart Plant Monitoring & Irrigation
+              </div>
+              <h2 style={{ fontSize: "22px", fontWeight: 700, margin: "2px 0 0 0", color: "#f8fafc" }}>
+                Personal IoT Dashboard
+              </h2>
+            </div>
+          </div>
+
+          <div style={{ display: "flex", alignItems: "center", gap: "12px", flexWrap: "wrap" }}>
+            <DeviceStatusBadge
+              status={deviceStatus}
+              sseConnected={sseConnected}
+              lastEventTime={lastEventTime}
+            />
+
+            <button
+              type="button"
+              onClick={refreshAllData}
+              disabled={syncing}
+              style={{
+                display: "inline-flex",
+                alignItems: "center",
+                gap: "6px",
+                background: "rgba(34, 197, 94, 0.15)",
+                border: "1px solid rgba(34, 197, 94, 0.3)",
+                color: "#4ade80",
+                padding: "8px 14px",
+                borderRadius: "10px",
+                fontSize: "13px",
+                fontWeight: 600,
+                cursor: syncing ? "not-allowed" : "pointer",
+              }}
+            >
+              <RefreshCw size={14} className={syncing ? "animate-spin" : ""} />
+              {syncing ? "Syncing..." : "Refresh"}
             </button>
+
+            <Link
+              href="/scheme-finder"
+              style={{
+                display: "inline-flex",
+                alignItems: "center",
+                gap: "6px",
+                color: "#94a3b8",
+                textDecoration: "none",
+                fontSize: "12px",
+                padding: "8px 12px",
+                borderRadius: "10px",
+                background: "rgba(255, 255, 255, 0.03)",
+                border: "1px solid rgba(255, 255, 255, 0.08)",
+              }}
+            >
+              <Landmark size={14} /> Scheme Finder
+            </Link>
           </div>
         </div>
-      </div>
 
-      <div className="page-shell" style={{ display: "grid", gap: 24 }}>
-        {error && (
-          <div className="badge" style={{ background: "rgba(251, 113, 133, 0.1)", color: "#fb7185", borderColor: "rgba(251, 113, 133, 0.2)", width: "fit-content" }}>
-            {error}
-          </div>
-        )}
+        {/* Active System Alerts Drawer */}
+        <AlertsDrawer alerts={alerts} onAlertAcknowledged={refreshAllData} />
 
-        <section className="hero-grid">
-          <div className="hero-card glass">
-            <span className="badge">Live telemetry {loading ? "updating..." : "online"}</span>
-            <h2 className="title-xl">{data.cropPrediction}</h2>
-            <p className="muted" style={{ maxWidth: 650 }}>
-              Use the overview for quick decisions, then switch into any metric tab to inspect thresholds, short trend history, and operator recommendations without opening many separate files.
-            </p>
-            <div className="stats-grid" style={{ marginTop: 18 }}>
-              {summaryCards(data).map((card) => (
-                <div key={card.label} className="kpi">
-                  <h4>{card.value}</h4>
-                  <p>{card.label}</p>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          <RecommendationCard
-            title="AI Action Plan"
-            items={[
-              "Increase morning irrigation by 8% due to temperature drift.",
-              "Field pH is still healthy, so avoid corrective dosing today.",
-              "Use scheme finder to check water-management subsidy eligibility.",
-            ]}
-            footer="Priority score: 82/100"
-          />
-        </section>
-
-        <TabNavigation
-          activeTab={activeTab}
-          onChange={setActiveTab}
-          summaryTabs={summaryTabs}
-          metricTabs={metricTabs}
+        {/* 1. TOP SECTION: Plant Name, Health Status, ESP8266 Link, Update Time, Mode */}
+        <PlantHealthHero
+          recommendation={recommendation}
+          latest={telemetry}
+          loading={loading}
+          deviceStatus={deviceStatus}
         />
 
-        <section className="dashboard-grid">
-          <div style={{ display: "grid", gap: 18 }}>
-            {activeTab === "overview" ? (
-              <SummaryContent title="Overview" description="Fast scan of your field signals, operator alerts, and system confidence.">
-                <div className="stats-grid">
-                  {sensorSummaries(data.current).map((sensor) => {
-                    const metricConfig = metricTabs.find(m => m.label === sensor.label);
-                    const sensorSeries = metricConfig ? buildSeries(metricConfig.id, data.current) : [];
-                    return <SensorCard key={sensor.label} {...sensor} series={sensorSeries} />;
-                  })}
-                </div>
-              </SummaryContent>
-            ) : metric ? (
-              <MetricContent 
-                metric={metric} 
-                value={typeof data.current[metric.valueKey as keyof typeof data.current] === "number" ? Number(data.current[metric.valueKey as keyof typeof data.current]) : 0} 
-                series={series} 
-              />
-            ) : (
-              <SummaryContent
-                title={summaryTabs.find((tab) => tab.id === activeTab)?.label ?? "Summary"}
-                description="These summary sections replace many dedicated files with one reusable component and focused content blocks."
-              >
-                <div className="summary-grid">
-                  <div className="content-card">
-                    <h3>System insight</h3>
-                    <p className="muted">Your workflow now uses reusable summary panels instead of separate long components for every insight screen.</p>
-                  </div>
-                  <div className="content-card">
-                    <h3>Operator note</h3>
-                    <p className="muted">Keep charts, ranges, and action blocks data-driven so only config changes when a new sensor is added.</p>
-                  </div>
-                </div>
-              </SummaryContent>
-            )}
-          </div>
+        {/* 2. SENSOR MONITORING: 4 Cards (Temperature, Humidity, Soil Moisture, Motion) */}
+        <SensorCardsGrid telemetry={telemetry} loading={loading} />
 
-          <div style={{ display: "grid", gap: 18 }}>
-            <div className="panel-card glass">
-              <div className="between">
-                <h3>Notifications</h3>
-                <Bell size={18} />
-              </div>
-              <ul className="list" style={{ marginTop: 14 }}>
-                <li>Soil moisture dipped 4% from the previous reading.</li>
-                <li>Predicted crop fit remains stable for the next 6-hour window.</li>
-                <li>Water TDS is inside safe irrigation range.</li>
-              </ul>
-            </div>
-            <RecommendationCard
-              title="Operator checklist"
-              items={[
-                "Validate sensor calibration at the start of each shift.",
-                "Use the metric view for detailed thresholds before sending alerts.",
-                "Keep backend API paths in one config file for cleaner maintenance.",
-              ]}
-            />
-          </div>
-        </section>
+        {/* 3. PUMP CONTROL & PLANT HEALTH COLUMNS */}
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(360px, 1fr))", gap: "24px" }}>
+          {/* Water Pump Actuator Controller */}
+          <PumpControlWidget
+            deviceId={deviceId}
+            confirmedPumpOn={deviceStatus?.pump_state ?? false}
+            currentMode={deviceStatus?.control_mode ?? "AUTO"}
+            onCommandDispatched={refreshAllData}
+            lastWateringTime={deviceStatus?.last_watering_time}
+            pumpRuntimeSeconds={deviceStatus?.pump_runtime_seconds}
+          />
+
+          {/* Plant Health Intelligence & Actionable Insights */}
+          <AIRecommendationsCard
+            recommendation={recommendation}
+            loading={loading}
+          />
+        </div>
+
+        {/* 4. HISTORICAL ANALYTICS (Temperature, Humidity, Soil Moisture, Pump Usage History) */}
+        <TelemetryTrendsChart
+          data={history}
+          onRefresh={refreshAllData}
+          loading={syncing}
+        />
+
+        {/* 5. VIRTUAL HARDWARE SIMULATOR (Enables immediate verification without physical board) */}
+        <HardwareSimulatorPanel
+          deviceId={deviceId}
+          confirmedPumpOn={deviceStatus?.pump_state ?? false}
+          currentMode={deviceStatus?.control_mode ?? "AUTO"}
+          onTelemetryEmitted={refreshAllData}
+        />
+
+        {/* Footer */}
+        <div style={{ textAlign: "center", color: "#64748b", fontSize: "12px", paddingTop: "20px" }}>
+          AI-Powered Smart Plant Monitoring & Irrigation Dashboard &bull; ESP8266 NodeMCU &bull; Personal IoT Edition
+        </div>
       </div>
     </main>
   );

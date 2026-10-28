@@ -31,6 +31,8 @@ class DeviceStatusResponse(BaseModel):
     seconds_since_last_seen: Optional[float] = None
     sensor_fault: bool = False
     active_alerts_count: int = 0
+    last_watering_time: Optional[datetime] = None
+    pump_runtime_seconds: Optional[int] = 0
 
 # ----------------- Telemetry Schemas -----------------
 class TelemetryCreate(BaseModel):
@@ -82,6 +84,9 @@ class DeviceCommandItem(BaseModel):
 
 class CommandPollResponse(BaseModel):
     has_command: bool
+    command_id: Optional[str] = None
+    pump: Optional[bool] = None
+    mode: Optional[str] = None
     command: Optional[DeviceCommandItem] = None
 
 class CommandAckRequest(BaseModel):
@@ -94,6 +99,19 @@ class CommandAckResponse(BaseModel):
     status: str
     confirmed_state: Optional[bool]
     message: str
+
+class PumpEventResponse(BaseModel):
+    id: int
+    device_id: str
+    requested_state: bool
+    confirmed_state: bool
+    source: str
+    control_mode: str
+    reason: Optional[str] = None
+    timestamp: datetime
+
+    class Config:
+        from_attributes = True
 
 # ----------------- Plant Profiles -----------------
 class PlantProfileUpdate(BaseModel):
@@ -157,7 +175,15 @@ class RecommendationResponse(BaseModel):
     plant_name: str
     health_score: int = Field(..., ge=0, le=100)
     status: str  # Optimal, Needs Attention, Critical
+    health_status: Optional[str] = "Optimal"
     severity: str  # low, medium, high
+    reason: Optional[str] = None
+    recommendation: Optional[str] = None
+    environmental_condition: Optional[str] = None
+    moisture_assessment: Optional[str] = None
+    temperature_assessment: Optional[str] = None
+    humidity_assessment: Optional[str] = None
+    recommended_actions: Optional[List[str]] = None
     observations: List[str]
     recommendations: List[str]
     ai_explanation: Optional[str] = None

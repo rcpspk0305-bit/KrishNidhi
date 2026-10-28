@@ -118,6 +118,32 @@ export default function AIRecommendationsCard({ recommendation, loading }: Props
         </div>
       )}
 
+      {/* Specific Health Dimension Assessments (Section 4) */}
+      <div
+        style={{
+          display: "grid",
+          gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))",
+          gap: "10px",
+        }}
+      >
+        <div style={{ background: "rgba(0,0,0,0.2)", padding: "10px 14px", borderRadius: "10px", border: "1px solid rgba(255,255,255,0.05)" }}>
+          <span style={{ fontSize: "11px", color: "#64748b", display: "block" }}>Environmental Condition</span>
+          <strong style={{ fontSize: "13px", color: "#e2e8f0" }}>{recommendation?.environmental_condition || "Nominal Indoor"}</strong>
+        </div>
+        <div style={{ background: "rgba(0,0,0,0.2)", padding: "10px 14px", borderRadius: "10px", border: "1px solid rgba(255,255,255,0.05)" }}>
+          <span style={{ fontSize: "11px", color: "#64748b", display: "block" }}>Moisture Assessment</span>
+          <strong style={{ fontSize: "13px", color: "#10b981" }}>{recommendation?.moisture_assessment || "Optimal range"}</strong>
+        </div>
+        <div style={{ background: "rgba(0,0,0,0.2)", padding: "10px 14px", borderRadius: "10px", border: "1px solid rgba(255,255,255,0.05)" }}>
+          <span style={{ fontSize: "11px", color: "#64748b", display: "block" }}>Temperature Assessment</span>
+          <strong style={{ fontSize: "13px", color: "#f43f5e" }}>{recommendation?.temperature_assessment || "Optimal microclimate"}</strong>
+        </div>
+        <div style={{ background: "rgba(0,0,0,0.2)", padding: "10px 14px", borderRadius: "10px", border: "1px solid rgba(255,255,255,0.05)" }}>
+          <span style={{ fontSize: "11px", color: "#64748b", display: "block" }}>Humidity Assessment</span>
+          <strong style={{ fontSize: "13px", color: "#38bdf8" }}>{recommendation?.humidity_assessment || "Balanced VPD"}</strong>
+        </div>
+      </div>
+
       {/* Observations and Recommendations Columns */}
       <div
         style={{

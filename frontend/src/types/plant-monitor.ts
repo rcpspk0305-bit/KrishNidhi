@@ -21,6 +21,8 @@ export interface PlantDeviceStatus {
   seconds_since_last_seen: number | null;
   sensor_fault: boolean;
   active_alerts_count: number;
+  last_watering_time?: string | null;
+  pump_runtime_seconds?: number | null;
 }
 
 export interface PlantProfile {
@@ -67,13 +69,32 @@ export interface PlantRecommendation {
   device_id: string;
   plant_name: string;
   health_score: number;
-  status: "Thriving" | "Optimal" | "Needs Attention" | "Needs Water" | "Over-watered" | "Critical Alert";
+  status: "Thriving" | "Optimal" | "Needs Attention" | "Needs Water" | "Over-watered" | "Critical Alert" | string;
+  health_status?: string;
   severity: "low" | "medium" | "high";
+  reason?: string;
+  recommendation?: string;
+  environmental_condition?: string;
+  moisture_assessment?: string;
+  temperature_assessment?: string;
+  humidity_assessment?: string;
+  recommended_actions?: string[];
   observations: string[];
   recommendations: string[];
   ai_explanation?: string | null;
   confidence: number;
   limitations: string;
+}
+
+export interface PumpEvent {
+  id: number;
+  device_id: string;
+  requested_state: boolean;
+  confirmed_state: boolean;
+  source: string;
+  control_mode: string;
+  reason: string | null;
+  timestamp: string;
 }
 
 export interface CommandAckResult {

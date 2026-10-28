@@ -146,29 +146,55 @@ inline void pollCommands() {
         StaticJsonDocument<512> doc;
         DeserializationError err = deserializeJson(doc, resp);
 
-        if (!err && doc["has_command"] == true) {
-            JsonObject cmd = doc["command"];
-            String cmdId = cmd["command_id"].as<String>();
-            String action = cmd["action"].as<String>();
-            String valStr = cmd["value"].as<String>();
+        if (!err && (doc["has_command"] == true || doc.containsKey("command_id"))) {
+            String cmdId = "";
+            if (doc.containsKey("command_id") && !doc["command_id"].isNull()) {
+                cmdId = doc["command_id"].as<String>();
+            } else if (doc.containsKey("command") && doc["command"].containsKey("command_id")) {
+                cmdId = doc["command"]["command_id"].as<String>();
+            }
 
-            Serial.printf("[Network] Received command: ID=%s, Action=%s, Val=%s\n",
-                          cmdId.c_str(), action.c_str(), valStr.c_str());
-
-            if (action == "SET_PUMP") {
-                bool desiredOn = (valStr.equalsIgnoreCase("true") || valStr == "1");
-                bool applied = requestSetPump(desiredOn, "REMOTE_COMMAND");
+            // Direct format check (Section 5: {"command_id": "...", "pump": true, "mode": "MANUAL"})
+            if (doc.containsKey("pump") && !doc["pump"].isNull()) {
+                bool desiredPump = doc["pump"].as<bool>();
+                Serial.printf("[Network] Received direct PUMP command: ID=%s, pump=%s\n",
+                              cmdId.c_str(), desiredPump ? "ON" : "OFF");
+                bool applied = requestSetPump(desiredPump, "REMOTE_COMMAND");
                 if (applied) {
-                    acknowledgeCommand(cmdId, "APPLIED", pumpState.isPumpOn, "Pump state transitioned successfully");
+                    acknowledgeCommand(cmdId, "APPLIED", pumpState.isPumpOn, "Pump transitioned successfully");
                 } else {
                     acknowledgeCommand(cmdId, "REJECTED", pumpState.isPumpOn, "Command rejected by safety lockout or cooldown");
                 }
-            } else if (action == "SET_MODE") {
-                ControlMode targetMode = stringToControlMode(valStr);
+            } else if (doc.containsKey("mode") && !doc["mode"].isNull()) {
+                String modeStr = doc["mode"].as<String>();
+                Serial.printf("[Network] Received direct MODE command: ID=%s, mode=%s\n",
+                              cmdId.c_str(), modeStr.c_str());
+                ControlMode targetMode = stringToControlMode(modeStr);
                 setControlMode(targetMode);
-                acknowledgeCommand(cmdId, "APPLIED", pumpState.isPumpOn, String("Mode updated to ") + valStr);
-            } else {
-                acknowledgeCommand(cmdId, "REJECTED", pumpState.isPumpOn, "Unknown action command");
+                acknowledgeCommand(cmdId, "APPLIED", pumpState.isPumpOn, String("Mode updated to ") + modeStr);
+            } else if (doc.containsKey("command")) {
+                JsonObject cmd = doc["command"];
+                String action = cmd["action"].as<String>();
+                String valStr = cmd["value"].as<String>();
+
+                Serial.printf("[Network] Received action command: ID=%s, Action=%s, Val=%s\n",
+                              cmdId.c_str(), action.c_str(), valStr.c_str());
+
+                if (action == "SET_PUMP") {
+                    bool desiredOn = (valStr.equalsIgnoreCase("true") || valStr == "1");
+                    bool applied = requestSetPump(desiredOn, "REMOTE_COMMAND");
+                    if (applied) {
+                        acknowledgeCommand(cmdId, "APPLIED", pumpState.isPumpOn, "Pump state transitioned successfully");
+                    } else {
+                        acknowledgeCommand(cmdId, "REJECTED", pumpState.isPumpOn, "Command rejected by safety lockout or cooldown");
+                    }
+                } else if (action == "SET_MODE") {
+                    ControlMode targetMode = stringToControlMode(valStr);
+                    setControlMode(targetMode);
+                    acknowledgeCommand(cmdId, "APPLIED", pumpState.isPumpOn, String("Mode updated to ") + valStr);
+                } else {
+                    acknowledgeCommand(cmdId, "REJECTED", pumpState.isPumpOn, "Unknown action command");
+                }
             }
         }
     }

@@ -1,6 +1,11 @@
-# REST API Specification (API v1)
+# REST API Specification (API v1 & Direct IoT Endpoints)
 
-**Base URL**: `http://<server-ip>:8000/api/v1`  
+**Base URLs**:
+- `http://<server-ip>:8000/api/v1` (Standard Versioned API)
+- `http://<server-ip>:8000/api` (Direct IoT Interface for ESP8266 REST endpoints)
+
+Both prefixes route to the same underlying controllers. The ESP8266 can interact directly with `http://<server-ip>:8000/api/devices/{device_id}/telemetry` and `http://<server-ip>:8000/api/devices/{device_id}/commands`.
+
 **Interactive Docs**: `http://<server-ip>:8000/docs` (Swagger UI) or `/redoc`
 
 ---
@@ -136,11 +141,14 @@ Dispatches a pump actuation or mode switch command from the dashboard.
   ```
 
 #### `GET /api/v1/devices/{device_id}/commands`
-Polled by ESP8266 every 2 seconds. Automatically expires stale commands.
+Polled by ESP8266 every 2 seconds. Automatically expires stale commands. Supports both top-level keys (`command_id`, `pump`, `mode`) for direct ESP8266 deserialization and nested `command` objects.
 - **Response (200 OK)**:
   ```json
   {
     "has_command": true,
+    "command_id": "cmd_a8f9b2c3d4e5",
+    "pump": true,
+    "mode": "MANUAL",
     "command": {
       "command_id": "cmd_a8f9b2c3d4e5",
       "action": "SET_PUMP",
@@ -171,6 +179,26 @@ Submitted by ESP8266 after executing or rejecting a command.
     "confirmed_state": true,
     "message": "Command cmd_a8f9b2c3d4e5 acknowledged as APPLIED"
   }
+  ```
+
+#### `GET /api/v1/devices/{device_id}/pump/history`
+Returns historical pump activations, duration, and triggering events (e.g. `PHYSICAL_BUTTON`, `REMOTE_COMMAND`, `AUTO_THRESHOLD`).
+- **Query Parameters**:
+  - `limit`: Max records to return (default: 50, max: 200)
+- **Response (200 OK)**:
+  ```json
+  [
+    {
+      "id": 12,
+      "device_id": "esp8266-plant-01",
+      "event_type": "PUMP_ON",
+      "trigger_source": "REMOTE_COMMAND",
+      "duration_seconds": 15,
+      "moisture_before": 24.5,
+      "moisture_after": 52.0,
+      "timestamp": "2026-10-28T14:25:00Z"
+    }
+  ]
   ```
 
 ---

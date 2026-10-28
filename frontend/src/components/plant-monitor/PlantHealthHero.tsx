@@ -1,16 +1,17 @@
 "use client";
 
 import React from "react";
-import { Sprout, CheckCircle2, AlertTriangle, AlertOctagon, Droplets, Thermometer, Wind } from "lucide-react";
-import { PlantRecommendation, PlantTelemetry } from "@/types/plant-monitor";
+import { Sprout, CheckCircle2, AlertTriangle, AlertOctagon, Droplets, Thermometer, Wind, Wifi, WifiOff, Clock } from "lucide-react";
+import { PlantRecommendation, PlantTelemetry, PlantDeviceStatus } from "@/types/plant-monitor";
 
 interface Props {
   recommendation: PlantRecommendation | null;
   latest: PlantTelemetry | null;
   loading: boolean;
+  deviceStatus?: PlantDeviceStatus | null;
 }
 
-export default function PlantHealthHero({ recommendation, latest, loading }: Props) {
+export default function PlantHealthHero({ recommendation, latest, loading, deviceStatus }: Props) {
   const healthScore = recommendation?.health_score ?? 85;
   const status = recommendation?.status ?? "Optimal";
   const plantName = recommendation?.plant_name ?? "Indoor Smart Planter";
@@ -53,7 +54,7 @@ export default function PlantHealthHero({ recommendation, latest, loading }: Pro
             <Sprout size={32} color="#4ade80" />
           </div>
           <div>
-            <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+            <div style={{ display: "flex", alignItems: "center", gap: "8px", flexWrap: "wrap" }}>
               <span
                 style={{
                   fontSize: "12px",
@@ -63,7 +64,7 @@ export default function PlantHealthHero({ recommendation, latest, loading }: Pro
                   color: "#4ade80",
                 }}
               >
-                ESP8266 IoT Autonomous Node
+                NodeMCU
               </span>
               <span
                 style={{
@@ -79,10 +80,54 @@ export default function PlantHealthHero({ recommendation, latest, loading }: Pro
                 }}
               >
                 {healthScore >= 80 ? <CheckCircle2 size={12} /> : healthScore >= 60 ? <AlertTriangle size={12} /> : <AlertOctagon size={12} />}
-                {status}
+                Health: {status}
+              </span>
+              <span
+                style={{
+                  fontSize: "12px",
+                  padding: "2px 8px",
+                  borderRadius: "999px",
+                  background: deviceStatus?.online ? "rgba(34, 197, 94, 0.15)" : "rgba(239, 68, 68, 0.15)",
+                  color: deviceStatus?.online ? "#4ade80" : "#fca5a5",
+                  border: `1px solid ${deviceStatus?.online ? "rgba(34, 197, 94, 0.3)" : "rgba(239, 68, 68, 0.3)"}`,
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: "4px",
+                }}
+              >
+                {deviceStatus?.online ? <Wifi size={12} /> : <WifiOff size={12} />}
+                ESP8266: {deviceStatus?.online ? "Connected" : "Offline"}
+              </span>
+              <span
+                style={{
+                  fontSize: "12px",
+                  padding: "2px 8px",
+                  borderRadius: "999px",
+                  background: "rgba(59, 130, 246, 0.15)",
+                  color: "#60a5fa",
+                  border: "1px solid rgba(59, 130, 246, 0.3)",
+                }}
+              >
+                Mode: {latest?.control_mode || deviceStatus?.control_mode || "AUTO"}
+              </span>
+              <span
+                style={{
+                  fontSize: "12px",
+                  padding: "2px 8px",
+                  borderRadius: "999px",
+                  background: "rgba(255, 255, 255, 0.05)",
+                  color: "#94a3b8",
+                  border: "1px solid rgba(255, 255, 255, 0.1)",
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: "4px",
+                }}
+              >
+                <Clock size={12} />
+                Updated: {latest?.timestamp ? new Date(latest.timestamp).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", second: "2-digit" }) : "Awaiting telemetry"}
               </span>
             </div>
-            <h1 style={{ fontSize: "28px", fontWeight: 700, margin: "4px 0 0 0", color: "#f8fafc" }}>
+            <h1 style={{ fontSize: "28px", fontWeight: 700, margin: "6px 0 0 0", color: "#f8fafc" }}>
               {plantName}
             </h1>
           </div>

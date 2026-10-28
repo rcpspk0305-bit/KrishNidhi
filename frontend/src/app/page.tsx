@@ -3,21 +3,21 @@ import { ArrowRight, Cpu, Landmark, Sprout, Waves } from "lucide-react";
 
 const quickLinks = [
   {
-    title: "AI Smart Plant Monitor & Automated Irrigation",
-    href: "/plant-monitor",
+    title: "AI Smart Plant Dashboard",
+    href: "/dashboard",
     desc: "ESP8266 NodeMCU live telemetry, DHT11 & soil moisture sensing, remote pump relay actuator, and AI agronomy.",
     icon: Sprout,
   },
   {
-    title: "Interactive Farm Dashboard",
-    href: "/login",
-    desc: "Live field telemetry, crop recommendations, smart alerts, and operator actions in one workspace.",
+    title: "Dedicated Plant Monitor View",
+    href: "/plant-monitor",
+    desc: "Full-width active telemetry and IoT actuator control workspace.",
     icon: Cpu,
   },
   {
-    title: "Scheme Finder",
+    title: "Government Scheme Finder",
     href: "/scheme-finder",
-    desc: "Search farmer schemes by category, eligibility, and benefit type.",
+    desc: "Search farmer and agricultural schemes by category, eligibility, and benefit type.",
     icon: Landmark,
   },
 ];
@@ -29,18 +29,18 @@ export default function HomePage() {
         <section className="hero-grid">
           <div className="hero-card glass">
             <span className="badge">
-              <Sprout size={14} /> AI-Powered IoT Smart Farming
+              <Sprout size={14} /> AI-Powered Personal IoT Plant Monitoring
             </span>
-            <h1 className="title-xl">KrishiNidhi & Smart Plant Monitor</h1>
+            <h1 className="title-xl">Smart Plant Monitor & Automated Irrigation</h1>
             <p className="muted" style={{ maxWidth: 680, fontSize: 18 }}>
               Intelligent IoT plant monitoring and automated fail-safe irrigation with ESP8266 NodeMCU, DHT11, calibrated soil moisture, PIR motion detection, and real-time Server-Sent Events.
             </p>
             <div className="row" style={{ marginTop: 18 }}>
-              <Link href="/plant-monitor" className="cta" style={{ background: "linear-gradient(135deg, #16a34a, #15803d)" }}>
-                Launch Smart Plant Monitor
+              <Link href="/dashboard" className="cta" style={{ background: "linear-gradient(135deg, #16a34a, #15803d)" }}>
+                Launch Smart Plant Dashboard
               </Link>
-              <Link href="/dashboard" className="ghost">
-                Field Operations
+              <Link href="/scheme-finder" className="ghost">
+                Scheme Finder
               </Link>
             </div>
           </div>

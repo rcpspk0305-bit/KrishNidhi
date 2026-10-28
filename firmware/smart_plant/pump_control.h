@@ -46,17 +46,22 @@ inline ControlMode stringToControlMode(const String& str) {
     return MODE_AUTO;
 }
 
+// Flag to trigger immediate HTTP telemetry sync upon state transitions
+static bool requestImmediateTelemetry = false;
+
 // Low-level relay actuation ensuring fail-safe state
 inline void setPhysicalRelay(bool state) {
     if (state) {
         digitalWrite(PIN_RELAY, RELAY_ACTIVE_LEVEL);
         pumpState.isPumpOn = true;
         pumpState.pumpTurnedOnTime = millis();
+        requestImmediateTelemetry = true;
         Serial.println(F("[Pump] Relay ENERGIZED -> Water Pump ON"));
     } else {
         digitalWrite(PIN_RELAY, RELAY_INACTIVE_LEVEL);
         pumpState.isPumpOn = false;
         pumpState.pumpTurnedOffTime = millis();
+        requestImmediateTelemetry = true;
         Serial.println(F("[Pump] Relay DE-ENERGIZED -> Water Pump OFF"));
     }
 }
@@ -117,6 +122,7 @@ inline void setControlMode(ControlMode newMode) {
     if (newMode == MODE_OFF && pumpState.isPumpOn) {
         setPhysicalRelay(false);
     }
+    requestImmediateTelemetry = true;
     Serial.printf("[Pump] Operating Mode changed to: %s\n", controlModeToString(newMode));
 }
 

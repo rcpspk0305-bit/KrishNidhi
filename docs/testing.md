@@ -21,38 +21,41 @@ platform win32 -- Python 3.14.5, pytest-9.1.1, pluggy-1.6.0
 cachedir: .pytest_cache
 rootdir: C:\Users\rc821\OneDrive\Desktop\Projects\NRCM-Codestrom\backend
 plugins: anyio-4.13.0, asyncio-1.4.0, cov-7.1.0
-collected 19 items
+collected 20 items
 
 tests/test_analytics.py::test_calculate_vpd PASSED                       [  5%]
 tests/test_analytics.py::test_rule_engine_low_moisture_detection PASSED  [ 10%]
 tests/test_analytics.py::test_analytics_and_recommendations_api PASSED   [ 15%]
-tests/test_devices.py::test_register_device PASSED                       [ 21%]
-tests/test_devices.py::test_duplicate_device_registration_fails PASSED   [ 26%]
-tests/test_devices.py::test_list_devices PASSED                          [ 31%]
-tests/test_devices.py::test_get_device_status PASSED                     [ 36%]
-tests/test_devices.py::test_update_plant_profile PASSED                  [ 42%]
-tests/test_pump_control.py::test_pump_command_flow_and_ack PASSED        [ 47%]
-tests/test_pump_control.py::test_command_expiration PASSED               [ 52%]
-tests/test_streamlit_workflows.py::test_streamlit_app_loads_without_errors PASSED [ 57%]
-tests/test_streamlit_workflows.py::test_realtime_dashboard_workflow PASSED [ 63%]
-tests/test_streamlit_workflows.py::test_crop_recommendation_workflow PASSED [ 68%]
-tests/test_streamlit_workflows.py::test_leaf_disease_diagnosis_workflow PASSED [ 73%]
-tests/test_streamlit_workflows.py::test_ai_chatbot_workflow PASSED       [ 78%]
-tests/test_telemetry.py::test_ingest_telemetry_success PASSED            [ 84%]
-tests/test_telemetry.py::test_ingest_telemetry_unauthorized PASSED       [ 89%]
-tests/test_telemetry.py::test_low_soil_moisture_triggers_alert PASSED    [ 94%]
+tests/test_devices.py::test_register_device PASSED                       [ 20%]
+tests/test_devices.py::test_duplicate_device_registration_fails PASSED   [ 25%]
+tests/test_devices.py::test_list_devices PASSED                          [ 30%]
+tests/test_devices.py::test_get_device_status PASSED                     [ 35%]
+tests/test_devices.py::test_update_plant_profile PASSED                  [ 40%]
+tests/test_direct_api_and_pump_history.py::test_direct_esp8266_api_and_pump_history PASSED [ 45%]
+tests/test_pump_control.py::test_pump_command_flow_and_ack PASSED        [ 50%]
+tests/test_pump_control.py::test_command_expiration PASSED               [ 55%]
+tests/test_streamlit_workflows.py::test_streamlit_app_loads_without_errors PASSED [ 60%]
+tests/test_streamlit_workflows.py::test_realtime_dashboard_workflow PASSED [ 65%]
+tests/test_crop_recommendation_workflow PASSED                          [ 70%]
+tests/test_streamlit_workflows.py::test_leaf_disease_diagnosis_workflow PASSED [ 75%]
+tests/test_streamlit_workflows.py::test_ai_chatbot_workflow PASSED       [ 80%]
+tests/test_telemetry.py::test_ingest_telemetry_success PASSED            [ 85%]
+tests/test_telemetry.py::test_ingest_telemetry_unauthorized PASSED       [ 90%]
+tests/test_telemetry.py::test_low_soil_moisture_triggers_alert PASSED    [ 95%]
 tests/test_telemetry.py::test_get_telemetry_history PASSED               [100%]
 
-======================= 19 passed in 22.67s =======================
+======================= 20 passed in 21.78s =======================
 ```
 
 ### 1.3 Coverage Summary
 1. **Device Security**: Verified SHA-256 salted API key hashing, duplicate registration rejections, and unauthorized telemetry 401 rejections.
-2. **Telemetry Validation**: Ingestion of temperature, humidity, calibrated soil moisture percentage, raw ADC, and motion flags.
-3. **Threshold Alerts**: Verification that soil moisture < 30% triggers `SOIL_DRY` alerts.
-4. **Command Pipeline & Acks**: End-to-end command generation, polling by device, execution acknowledgment, state confirmation, and TTL expiration.
-5. **Agronomic Rule Engine**: Accurate Vapor Pressure Deficit (VPD) computation and health index scoring.
-6. **Streamlit Workflows**: End-to-end headless verification via `AppTest` for:
+2. **Direct ESP8266 REST Endpoints**: Verified direct `/api/devices/{id}/telemetry` ingestion and `/api/devices/{id}/commands` polling (Section 5 contract) alongside `/api/v1/devices/...`.
+3. **Telemetry Validation**: Ingestion of temperature, humidity, calibrated soil moisture percentage, raw ADC, and motion flags.
+4. **Threshold Alerts**: Verification that soil moisture < 30% triggers `SOIL_DRY` alerts.
+5. **Command Pipeline & Acks**: End-to-end command generation, polling by device, execution acknowledgment, state confirmation, TTL expiration, and direct top-level fields (`command_id`, `pump`, `mode`).
+6. **Pump Event Tracking**: `GET /api/devices/{device_id}/pump/history` verified for tracking historical pump activations, duration, and triggering sources.
+7. **Agronomic Rule Engine**: Accurate Vapor Pressure Deficit (VPD) computation, health index scoring, and granular dimension assessments (environmental condition, moisture assessment, temperature assessment, humidity assessment, and recommended actions).
+8. **Streamlit Workflows**: End-to-end headless verification via `AppTest` for:
    - Real-time Dashboard (telemetry toggle, manual simulator, database persistence, notifications)
    - Crop Recommendation Suitability Engine (soil & weather parameter inference)
    - Leaf Disease Diagnosis (multimodal Gemini vision and agronomic action plan)

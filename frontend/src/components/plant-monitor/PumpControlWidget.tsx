@@ -9,6 +9,8 @@ interface Props {
   confirmedPumpOn: boolean;
   currentMode: "AUTO" | "MANUAL" | "OFF";
   onCommandDispatched?: () => void;
+  lastWateringTime?: string | null;
+  pumpRuntimeSeconds?: number | null;
 }
 
 export default function PumpControlWidget({
@@ -16,6 +18,8 @@ export default function PumpControlWidget({
   confirmedPumpOn,
   currentMode,
   onCommandDispatched,
+  lastWateringTime,
+  pumpRuntimeSeconds,
 }: Props) {
   const [submitting, setSubmitting] = useState(false);
   const [pendingAction, setPendingAction] = useState<string | null>(null);
@@ -264,6 +268,39 @@ export default function PumpControlWidget({
               ? "TURN PUMP ON (MANUAL)"
               : "ENABLED ONLY IN MANUAL MODE"}
           </button>
+        </div>
+      </div>
+
+      {/* Runtime & Watering Status Bar */}
+      <div
+        style={{
+          display: "grid",
+          gridTemplateColumns: "repeat(auto-fit, minmax(140px, 1fr))",
+          gap: "10px",
+          background: "rgba(0, 0, 0, 0.2)",
+          padding: "12px",
+          borderRadius: "12px",
+          border: "1px solid rgba(255, 255, 255, 0.05)",
+          fontSize: "12px",
+        }}
+      >
+        <div>
+          <span style={{ color: "#64748b", display: "block" }}>Last Watering</span>
+          <strong style={{ color: "#e2e8f0" }}>
+            {lastWateringTime ? new Date(lastWateringTime).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", second: "2-digit" }) : "None recorded"}
+          </strong>
+        </div>
+        <div>
+          <span style={{ color: "#64748b", display: "block" }}>Pump Runtime</span>
+          <strong style={{ color: confirmedPumpOn ? "#10b981" : "#e2e8f0" }}>
+            {confirmedPumpOn ? `${pumpRuntimeSeconds || 0}s (Running)` : "0s (Standby)"}
+          </strong>
+        </div>
+        <div>
+          <span style={{ color: "#64748b", display: "block" }}>Confirmation Status</span>
+          <strong style={{ color: confirmedPumpOn ? "#10b981" : "#94a3b8" }}>
+            {confirmedPumpOn ? "Verified Active" : "Verified Inactive"}
+          </strong>
         </div>
       </div>
 

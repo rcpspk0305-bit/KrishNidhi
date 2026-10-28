@@ -4,7 +4,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from app.routes import sensors, predict, chat, sms, dashboard
 from app.services.mqtt_service import start_mqtt_background
-from app.api.v1 import api_v1_router
+from app.api.v1 import api_v1_router, api_router
 from app.core.database import engine, init_db
 from app.models import db_models
 
@@ -31,8 +31,9 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# API v1 Suite for Smart Plant Monitoring IoT
+# API Suite for Smart Plant Monitoring IoT (supports both /api/v1/devices and /api/devices)
 app.include_router(api_v1_router)
+app.include_router(api_router)
 
 # Legacy / Companion Routes (Preserved for compatibility)
 app.include_router(sensors.router)

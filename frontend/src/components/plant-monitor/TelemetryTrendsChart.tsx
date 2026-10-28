@@ -21,7 +21,7 @@ interface Props {
 }
 
 export default function TelemetryTrendsChart({ data, onRefresh, loading }: Props) {
-  const [selectedMetric, setSelectedMetric] = useState<"all" | "soil" | "temp" | "humidity">("all");
+  const [selectedMetric, setSelectedMetric] = useState<"all" | "soil" | "temp" | "humidity" | "pump">("all");
 
   const formattedData = data.map((d) => {
     const timeStr = d.timestamp ? new Date(d.timestamp).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }) : "";
@@ -64,7 +64,7 @@ export default function TelemetryTrendsChart({ data, onRefresh, loading }: Props
         <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
           {/* Metric filter buttons */}
           <div style={{ display: "flex", background: "rgba(0, 0, 0, 0.3)", padding: "3px", borderRadius: "10px", border: "1px solid rgba(255, 255, 255, 0.05)" }}>
-            {(["all", "soil", "temp", "humidity"] as const).map((filter) => (
+            {(["all", "soil", "temp", "humidity", "pump"] as const).map((filter) => (
               <button
                 key={filter}
                 type="button"
@@ -162,6 +162,18 @@ export default function TelemetryTrendsChart({ data, onRefresh, loading }: Props
                   name="Humidity (% RH)"
                   stroke="#3b82f6"
                   strokeWidth={2}
+                  dot={false}
+                  activeDot={{ r: 4 }}
+                />
+              )}
+              {(selectedMetric === "all" || selectedMetric === "pump") && (
+                <Line
+                  type="stepAfter"
+                  dataKey="pump_active"
+                  name="Pump Usage Active (0/100%)"
+                  stroke="#f59e0b"
+                  strokeWidth={2}
+                  strokeDasharray="4 4"
                   dot={false}
                   activeDot={{ r: 4 }}
                 />

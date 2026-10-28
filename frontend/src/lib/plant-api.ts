@@ -6,6 +6,7 @@ import {
   PlantAlert,
   PlantAnalytics,
   PlantRecommendation,
+  PumpEvent,
 } from "@/types/plant-monitor";
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api/v1";
@@ -61,6 +62,13 @@ export const plantApi = {
       ttl_seconds: 60,
     });
     return res.data;
+  },
+
+  getPumpHistory: async (deviceId: string, limit = 50): Promise<PumpEvent[]> => {
+    const res = await apiClient.get(`/devices/${deviceId}/pump/history`, {
+      params: { limit },
+    });
+    return res.data || [];
   },
 
   // Alerts

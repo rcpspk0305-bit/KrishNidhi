@@ -6,7 +6,7 @@ import { PlantTelemetry } from "@/types/plant-monitor";
 interface SSEOptions {
   deviceId: string;
   onTelemetry?: (data: PlantTelemetry) => void;
-  onPumpStateUpdated?: (data: { confirmed_state: boolean; control_mode: string }) => void;
+  onPumpStateUpdated?: (data: { confirmed_state: boolean; control_mode: string; timestamp?: string; command_id?: string }) => void;
   onCommandCreated?: (data: any) => void;
 }
 
