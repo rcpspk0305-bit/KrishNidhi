@@ -115,7 +115,7 @@ def get_device_analytics(
     )
 
 @router.get("/{device_id}/recommendations", response_model=RecommendationResponse)
-def get_plant_recommendations(device_id: str, db: Session = Depends(get_db)):
+def get_plant_recommendations(device_id: str, db: Session = Depends(get_db), language: str = Query("en", pattern="^(en|te|hi)$")):
     """
     Evaluates plant environmental suitability using rule-based agronomy
     and optional LLM contextual explanation.
@@ -173,10 +173,11 @@ def get_plant_recommendations(device_id: str, db: Session = Depends(get_db)):
         "current_vpd_kpa": calculate_vpd(latest.temperature, latest.humidity) if latest else None,
     }
     ai_summary = generate_natural_language_summary(
-        profile.plant_name, evaluation, latest_metrics
+        profile.plant_name, evaluation, latest_metrics, language=language
     )
 
     return RecommendationResponse(
+        language=language,
         device_id=device_id,
         plant_name=profile.plant_name,
         health_score=evaluation["health_score"],

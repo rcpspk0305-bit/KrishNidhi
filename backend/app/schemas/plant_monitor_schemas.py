@@ -165,6 +165,7 @@ class AnalyticsResponse(BaseModel):
     status_summary: str
 
 class RecommendationResponse(BaseModel):
+    language: str = "en"
     device_id: str
     plant_name: str
     health_score: int = Field(..., ge=0, le=100)
