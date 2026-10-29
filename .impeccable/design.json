@@ -1,0 +1,20 @@
+{
+  "name": "KrishiNidhi botanical workspace",
+  "mode": "operate",
+  "colors": {
+    "ground": "#f6f7f2",
+    "surface": "#fffefa",
+    "rail": "#fdfdf9",
+    "text": "#263d31",
+    "muted": "#697367",
+    "primary": "#315b44",
+    "border": "#e3e7dd",
+    "sage": "#edf0e4",
+    "moisture": "#3e705b",
+    "temperature": "#ad6c45",
+    "humidity": "#668a9b"
+  },
+  "typography": { "body": "Geist Sans (local)", "heading": "Georgia, serif" },
+  "layout": { "sidebar": 222, "mainInset": 42, "gap": 22, "panelRadius": 14 },
+  "source": "frontend/src/components/plant-monitor/PlantWorkspace.module.css"
+}
