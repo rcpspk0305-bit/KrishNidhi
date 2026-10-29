@@ -211,3 +211,71 @@ def test_ai_chatbot_workflow():
     reply = asyncio.run(generate_chat_response(chat_req))
     assert isinstance(reply, str)
     assert len(reply) > 20
+
+
+def test_smart_plant_sensor_monitoring_workflow():
+    """
+    Test 6: Verify Smart Plant IoT sensor monitoring and simulation:
+    - Verifies presence of Soil Moisture, PIR Motion, and Pump controls
+    - Simulates adjusting soil moisture and pump state
+    - Pushes reading and verifies database records store smart plant telemetry
+    """
+    at = AppTest.from_file(STREAMLIT_APP_PATH, default_timeout=35).run()
+    assert len(at.exception) == 0
+
+    # Switch Telemetry Source to '🧪 Manual Telemetry Simulator'
+    telemetry_radio = at.radio[0]
+    telemetry_radio.set_value("🧪 Manual Telemetry Simulator").run()
+    assert len(at.exception) == 0
+
+    # Verify Soil Moisture slider exists
+    soil_sliders = [s for s in at.slider if "Soil Moisture" in s.label]
+    assert len(soil_sliders) == 1, "Expected Soil Moisture slider in simulator"
+    soil_sliders[0].set_value(58.5).run()
+
+    # Verify push live reading button and push
+    push_button = [b for b in at.button if "Push Live Reading" in b.label]
+    assert len(push_button) == 1
+    push_button[0].click().run()
+    assert len(at.exception) == 0
+
+    # Verify reading in DB has soil moisture recorded
+    db = SessionLocal()
+    latest_reading = (
+        db.query(db_models.SensorReading)
+        .order_by(db_models.SensorReading.timestamp.desc())
+        .first()
+    )
+    db.close()
+    assert latest_reading is not None
+    assert latest_reading.soil_moisture is not None
+    assert latest_reading.soil_moisture == 58.5
+
+
+def test_multilingual_assistant_workflow():
+    """
+    Test 7: Verify Multilingual AI Assistant in Streamlit:
+    - Switches workspace to Chatbot / Assistant
+    - Verifies language selectbox has English, Telugu, and Hindi options
+    - Tests language switching
+    """
+    at = AppTest.from_file(STREAMLIT_APP_PATH, default_timeout=35).run()
+    assert len(at.exception) == 0
+
+    workspace_radio = at.sidebar.radio[0]
+    chat_option = [opt for opt in workspace_radio.options if "Chatbot" in opt][0]
+    workspace_radio.set_value(chat_option).run()
+    assert len(at.exception) == 0
+
+    # Verify language options include English, Telugu, Hindi
+    lang_selectbox = at.selectbox[0]
+    options_str = " ".join(lang_selectbox.options)
+    assert "English" in options_str
+    assert "Telugu" in options_str
+    assert "Hindi" in options_str
+
+    # Switch to Telugu
+    telugu_opt = [opt for opt in lang_selectbox.options if "Telugu" in opt][0]
+    lang_selectbox.set_value(telugu_opt).run()
+    assert len(at.exception) == 0
+

@@ -6,17 +6,15 @@ from app.services.assistant_service import answer_question
 
 async def main():
     try:
-        reply = await answer_question(AssistantRequest(message="What is 2+2? Answer in one short sentence."))
+        reply = await answer_question(AssistantRequest(message="What does soil moisture mean? Answer in one short sentence."))
         print("AI response:", reply[:300])
     except Exception as error:
         cause = error.__cause__
-        message = str(getattr(cause, "message", "")).lower()
+        response = getattr(cause, "response", None)
         print({
+            "configured": str(error) != "not_configured",
             "provider_error": type(cause).__name__,
-            "status_code": getattr(cause, "code", None),
-            "key_issue": "api_key_invalid" in message or ("api key" in message and any(text in message for text in ["not valid", "invalid", "expired"])),
-            "quota_issue": "quota" in message,
-            "model_unavailable": "not found" in message,
+            "status_code": response.status_code if response is not None else None,
         })
 
 
