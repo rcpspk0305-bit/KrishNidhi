@@ -3,11 +3,20 @@ import sys
 import os
 import random
 import asyncio
-from datetime import datetime
+from datetime import datetime, timezone
 import pandas as pd
 import plotly.express as px
 import plotly.graph_objects as go
 from PIL import Image
+
+# Bridge Streamlit Cloud secrets to environment variables if present
+try:
+    if hasattr(st, "secrets"):
+        for sec_key, sec_val in st.secrets.items():
+            if isinstance(sec_val, str) and sec_key not in os.environ:
+                os.environ[sec_key] = sec_val
+except Exception:
+    pass
 
 # Ensure the backend directory is in the path for importing modules
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), 'backend')))
@@ -22,6 +31,14 @@ try:
     from app.models.schemas import SensorData, GenAIRequest, ChatRequest
     from app.core.config import settings
     from app.services.mqtt_service import latest_iot_data, iot_metadata, start_mqtt_background
+    try:
+        from app.services.assistant_service import answer_question as assistant_answer_question, AssistantUnavailable
+        from app.schemas.assistant_schemas import AssistantRequest, AssistantMessage
+    except ImportError:
+        assistant_answer_question = None
+        AssistantUnavailable = Exception
+        AssistantRequest = None
+        AssistantMessage = None
 except ImportError as e:
     st.error(f"Failed to import backend modules. Make sure you run streamlit from the project root. Error: {e}")
     st.stop()
@@ -52,15 +69,53 @@ def run_async(coro):
 
 # Populate initial historical data if DB is empty
 def populate_initial_data(db):
+    # Ensure default Smart Plant device exists
+    dev = db.query(db_models.Device).filter(db_models.Device.id == "esp32-node-01").first()
+    if not dev:
+        dev = db_models.Device(
+            id="esp32-node-01",
+            name="Smart Plant Monitor #1",
+            api_key_hash="seed_hash",
+            status="online",
+            control_mode="AUTO",
+            pump_state=False,
+            last_seen=datetime.now(timezone.utc)
+        )
+        db.add(dev)
+        db.commit()
+
+    # Ensure default PlantProfile exists
+    prof = db.query(db_models.PlantProfile).filter(db_models.PlantProfile.device_id == "esp32-node-01").first()
+    if not prof:
+        prof = db_models.PlantProfile(
+            device_id="esp32-node-01",
+            plant_name="Tomato (Solanum lycopersicum)",
+            plant_type="Vegetable",
+            preferred_temp_min=18.0,
+            preferred_temp_max=30.0,
+            preferred_humidity_min=50.0,
+            preferred_humidity_max=70.0,
+            preferred_moisture_min=30.0,
+            preferred_moisture_max=65.0
+        )
+        db.add(prof)
+        db.commit()
+
     count = db.query(db_models.SensorReading).count()
     if count == 0:
-        now = datetime.utcnow()
+        now = datetime.now(timezone.utc)
         for i in range(24, 0, -1):
             timestamp = now - pd.Timedelta(hours=i)
             reading = db_models.SensorReading(
+                device_id="esp32-node-01",
                 timestamp=timestamp,
                 temperature=round(25.5 + random.uniform(-2, 2), 1),
                 humidity=round(40.0 + random.uniform(-5, 5), 1),
+                soil_moisture=round(48.0 + random.uniform(-6, 6), 1),
+                soil_raw=int(round(490 + random.uniform(-25, 25))),
+                motion_detected=False,
+                pump_on=False,
+                control_mode="AUTO",
                 ph=round(6.8 + random.uniform(-0.2, 0.2), 2),
                 rainfall=round(50.0 + random.uniform(-10, 10), 1),
                 n=round(88.0 + random.uniform(-5, 5), 1),
@@ -228,8 +283,10 @@ st.sidebar.markdown("<h3 style='color:#b19cd9;'>System Config</h3>", unsafe_allo
 
 # Display Key Configuration Statuses
 has_gemini = "Configured" if settings.GEMINI_API_KEY else "Missing (Using Fallbacks)"
+has_assistant = "Configured" if getattr(settings, "OPENROUTER_API_KEY", None) else "Fallback Mode"
 has_twilio = "Configured" if settings.TWILIO_ACCOUNT_SID and settings.TWILIO_AUTH_TOKEN else "Missing"
 st.sidebar.markdown(f"**Gemini GenAI:** {has_gemini}")
+st.sidebar.markdown(f"**Multilingual Assistant:** {has_assistant}")
 st.sidebar.markdown(f"**Twilio SMS Alerting:** {has_twilio}")
 
 # Active alerts container helper
@@ -318,6 +375,7 @@ if app_mode == "📊 Real-time Dashboard":
             if st.button("🔄 Push Live Reading to DB"):
                 db = get_db()
                 new_reading = db_models.SensorReading(
+                    device_id="esp32-node-01",
                     temperature=latest_iot_data["temperature"],
                     humidity=latest_iot_data["humidity"],
                     ph=latest_iot_data["ph"],
@@ -325,11 +383,21 @@ if app_mode == "📊 Real-time Dashboard":
                     n=latest_iot_data["N"],
                     p=latest_iot_data["P"],
                     k=latest_iot_data["K"],
-                    tds=latest_iot_data["tds"]
+                    tds=latest_iot_data["tds"],
+                    soil_moisture=latest_iot_data.get("soil_moisture", 48.0),
+                    soil_raw=int(latest_iot_data.get("soil_raw", 490)),
+                    motion_detected=bool(latest_iot_data.get("motion_detected", False)),
+                    pump_on=bool(latest_iot_data.get("pump_on", False)),
+                    control_mode=str(latest_iot_data.get("control_mode", "AUTO"))
                 )
                 db.add(new_reading)
+                dev_obj = db.query(db_models.Device).filter(db_models.Device.id == "esp32-node-01").first()
+                if dev_obj:
+                    dev_obj.pump_state = latest_iot_data.get("pump_on", False)
+                    dev_obj.control_mode = latest_iot_data.get("control_mode", "AUTO")
+                    dev_obj.last_seen = datetime.now(timezone.utc)
                 db.commit()
-                add_notification(f"Manual telemetry reading written. Temp: {latest_iot_data['temperature']}°C")
+                add_notification(f"Manual telemetry reading written. Temp: {latest_iot_data['temperature']}°C, Moisture: {latest_iot_data.get('soil_moisture', 48.0)}%")
                 st.success("Reading successfully pushed to Database!")
                 st.rerun()
 
@@ -348,15 +416,71 @@ if app_mode == "📊 Real-time Dashboard":
             latest_iot_data["rainfall"] = round(st.slider("Rainfall (mm)", 20.0, 300.0, float(latest_iot_data["rainfall"]), 0.1), 1)
             latest_iot_data["tds"] = round(st.slider("Water TDS (ppm)", 0.0, 500.0, float(latest_iot_data.get("tds", 150.0)), 1.0), 1)
 
+        # Smart Plant IoT Specific Controls
+        st.markdown("##### 🌿 Smart Plant IoT Telemetry & Actuation")
+        col_p1, col_p2, col_p3, col_p4 = st.columns(4)
+        with col_p1:
+            latest_iot_data["soil_moisture"] = round(st.slider("Soil Moisture (%)", 0.0, 100.0, float(latest_iot_data.get("soil_moisture", 48.0)), 0.5), 1)
+            latest_iot_data["soil_raw"] = int(1023 - (latest_iot_data["soil_moisture"] / 100.0 * 600))
+        with col_p2:
+            latest_iot_data["motion_detected"] = st.checkbox("PIR Motion Detected", value=bool(latest_iot_data.get("motion_detected", False)))
+        with col_p3:
+            latest_iot_data["pump_on"] = st.checkbox("Irrigation Pump Active", value=bool(latest_iot_data.get("pump_on", False)))
+        with col_p4:
+            current_mode = latest_iot_data.get("control_mode", "AUTO")
+            mode_options = ["AUTO", "MANUAL", "OFF"]
+            mode_idx = mode_options.index(current_mode) if current_mode in mode_options else 0
+            latest_iot_data["control_mode"] = st.selectbox("Control Mode", mode_options, index=mode_idx)
+
     st.markdown("---")
 
-    # Metrics Section
+    # Smart Plant Overview Cards
+    moisture_val = latest_iot_data.get("soil_moisture", 48.0)
+    moisture_status = "Optimal (30-65%)" if 30 <= moisture_val <= 65 else ("Dry (Irrigation Needed)" if moisture_val < 30 else "Saturated / Wet")
+    moisture_color = "#00ffc4" if 30 <= moisture_val <= 65 else ("#f59e0b" if moisture_val < 30 else "#38bdf8")
+
+    pump_status = "ACTIVE (PUMPING)" if latest_iot_data.get("pump_on", False) else "IDLE / OFF"
+    pump_color = "#00ffc4" if latest_iot_data.get("pump_on", False) else "#94a3b8"
+
+    motion_status = "MOVEMENT DETECTED" if latest_iot_data.get("motion_detected", False) else "QUIET / NO MOTION"
+    motion_color = "#f43f5e" if latest_iot_data.get("motion_detected", False) else "#00ffc4"
+
+    col_sp1, col_sp2, col_sp3 = st.columns(3)
+    with col_sp1:
+        st.markdown(f"""
+        <div class="glass-card" style="border-left: 4px solid {moisture_color};">
+            <div class="card-title">🌱 Soil Moisture Level</div>
+            <div class="card-value">{moisture_val}</div>
+            <div class="card-unit">%</div>
+            <div class="card-hint" style="color: {moisture_color}; font-weight:600;">Status: {moisture_status}</div>
+        </div>
+        """, unsafe_allow_html=True)
+
+    with col_sp2:
+        st.markdown(f"""
+        <div class="glass-card" style="border-left: 4px solid {pump_color};">
+            <div class="card-title">🚰 Smart Irrigation Pump</div>
+            <div style="font-size: 1.5rem; font-weight: 700; color: #ffffff; margin-top: 6px;">{pump_status}</div>
+            <div class="card-hint" style="color: #da70d6; font-weight: 600;">Mode: {latest_iot_data.get('control_mode', 'AUTO')}</div>
+        </div>
+        """, unsafe_allow_html=True)
+
+    with col_sp3:
+        st.markdown(f"""
+        <div class="glass-card" style="border-left: 4px solid {motion_color};">
+            <div class="card-title">🐾 PIR Security & Motion</div>
+            <div style="font-size: 1.5rem; font-weight: 700; color: #ffffff; margin-top: 6px;">{motion_status}</div>
+            <div class="card-hint" style="color: {motion_color}; font-weight: 600;">GPIO D7 Passive Infrared</div>
+        </div>
+        """, unsafe_allow_html=True)
+
+    # Core Metrics Section
     col_m1, col_m2, col_m3, col_m4 = st.columns(4)
     
     with col_m1:
         st.markdown(f"""
         <div class="glass-card">
-            <div class="metric-title">Temperature</div>
+            <div class="card-title">Temperature</div>
             <div class="card-value">{latest_iot_data['temperature']}</div>
             <div class="card-unit">°C</div>
             <div class="card-hint">Optimal: 20-30°C</div>
@@ -366,7 +490,7 @@ if app_mode == "📊 Real-time Dashboard":
     with col_m2:
         st.markdown(f"""
         <div class="glass-card">
-            <div class="metric-title">Humidity</div>
+            <div class="card-title">Humidity</div>
             <div class="card-value">{latest_iot_data['humidity']}</div>
             <div class="card-unit">%</div>
             <div class="card-hint">Optimal: 40-70%</div>
@@ -376,7 +500,7 @@ if app_mode == "📊 Real-time Dashboard":
     with col_m3:
         st.markdown(f"""
         <div class="glass-card">
-            <div class="metric-title">Soil pH</div>
+            <div class="card-title">Soil pH</div>
             <div class="card-value">{latest_iot_data['ph']}</div>
             <div class="card-unit">pH</div>
             <div class="card-hint">Optimal: 6.0-7.5</div>
@@ -386,7 +510,7 @@ if app_mode == "📊 Real-time Dashboard":
     with col_m4:
         st.markdown(f"""
         <div class="glass-card">
-            <div class="metric-title">Water TDS</div>
+            <div class="card-title">Water TDS</div>
             <div class="card-value">{latest_iot_data.get('tds', 150.0)}</div>
             <div class="card-unit">ppm</div>
             <div class="card-hint">Optimal: &lt; 200 ppm</div>
@@ -409,6 +533,7 @@ if app_mode == "📊 Real-time Dashboard":
                     "Timestamp": r.timestamp,
                     "Temperature (°C)": r.temperature,
                     "Humidity (%)": r.humidity,
+                    "Soil Moisture (%)": r.soil_moisture if r.soil_moisture is not None else 48.0,
                     "pH": r.ph,
                     "Rainfall (mm)": r.rainfall,
                     "Nitrogen": r.n,
@@ -421,9 +546,9 @@ if app_mode == "📊 Real-time Dashboard":
             fig = px.line(
                 df, 
                 x="Timestamp", 
-                y=["Temperature (°C)", "Humidity (%)", "Rainfall (mm)"],
+                y=["Temperature (°C)", "Humidity (%)", "Soil Moisture (%)", "Rainfall (mm)"],
                 title="Soil Temperature, Moisture, & Rain Trends",
-                color_discrete_sequence=["#8a2be2", "#da70d6", "#00ffc4"]
+                color_discrete_sequence=["#8a2be2", "#da70d6", "#00ffc4", "#38bdf8"]
             )
             fig.update_layout(
                 plot_bgcolor='rgba(0,0,0,0)',
@@ -486,6 +611,51 @@ if app_mode == "📊 Real-time Dashboard":
             <h2 style="color: #ffffff; margin-top: 4px; font-size: 2.2rem; font-weight: 800;">{rec_crop}</h2>
         </div>
         """, unsafe_allow_html=True)
+
+        # Quick Irrigation Pump Actuation
+        st.markdown("### 🚰 Operator Pump Override")
+        col_btn1, col_btn2 = st.columns(2)
+        with col_btn1:
+            if st.button("🟢 Start Pump"):
+                latest_iot_data["pump_on"] = True
+                latest_iot_data["control_mode"] = "MANUAL"
+                db = get_db()
+                dev_obj = db.query(db_models.Device).filter(db_models.Device.id == "esp32-node-01").first()
+                if dev_obj:
+                    dev_obj.pump_state = True
+                    dev_obj.control_mode = "MANUAL"
+                db.add(db_models.PumpEvent(
+                    device_id="esp32-node-01",
+                    requested_state=True,
+                    confirmed_state=True,
+                    source="streamlit_manual",
+                    control_mode="MANUAL",
+                    reason="Streamlit dashboard manual operator override"
+                ))
+                db.commit()
+                add_notification("Irrigation Pump manually energized via Streamlit.")
+                st.success("Pump turned ON!")
+                st.rerun()
+
+        with col_btn2:
+            if st.button("🔴 Stop Pump"):
+                latest_iot_data["pump_on"] = False
+                db = get_db()
+                dev_obj = db.query(db_models.Device).filter(db_models.Device.id == "esp32-node-01").first()
+                if dev_obj:
+                    dev_obj.pump_state = False
+                db.add(db_models.PumpEvent(
+                    device_id="esp32-node-01",
+                    requested_state=False,
+                    confirmed_state=False,
+                    source="streamlit_manual",
+                    control_mode=latest_iot_data.get("control_mode", "MANUAL"),
+                    reason="Streamlit dashboard manual operator stop"
+                ))
+                db.commit()
+                add_notification("Irrigation Pump stopped via Streamlit.")
+                st.warning("Pump turned OFF!")
+                st.rerun()
         
         # Notification logger
         st.markdown("### Operator Notifications Logs")
@@ -665,10 +835,46 @@ elif app_mode == "🍃 Leaf Disease Diagnosis":
 
 elif app_mode == "🤖 KrishiNidhi AI Chatbot":
     st.subheader("KrishiNidhi Agronomist Assistant")
-    st.write("Ask agricultural questions. The chatbot leverages Gemini with a local fallback PDF RAG (using the agriculture-compendium.pdf).")
+    st.write("Ask agricultural & smart plant monitoring questions in your preferred language. The assistant leverages generative AI with automatic fallback to our comprehensive agronomic compendium.")
     
-    chat_lang = st.selectbox("Preferred Chat Language", ["English", "Telugu", "Hindi", "Spanish"])
-    
+    chat_lang = st.selectbox("Preferred Chat Language", ["English", "Telugu (తెలుగు)", "Hindi (हिन्दी)", "Spanish"])
+    lang_code = "te" if "Telugu" in chat_lang else ("hi" if "Hindi" in chat_lang else "en")
+
+    # Live plant telemetry context banner
+    with st.expander("🌱 View Live Plant Monitoring Context", expanded=False):
+        c1, c2, c3, c4 = st.columns(4)
+        c1.metric("Soil Moisture", f"{latest_iot_data.get('soil_moisture', 48.0)}%")
+        c2.metric("Temperature", f"{latest_iot_data.get('temperature', 25.5)}°C")
+        c3.metric("Humidity", f"{latest_iot_data.get('humidity', 40.0)}%")
+        c4.metric("Pump State", "ON" if latest_iot_data.get("pump_on", False) else "OFF")
+
+    # Suggested Prompts
+    st.markdown("<p style='font-size:0.85rem; color:#b19cd9; margin-bottom:6px;'>Suggested Inquiries:</p>", unsafe_allow_html=True)
+    suggested_cols = st.columns(3)
+    suggested_query = None
+    if lang_code == "te":
+        prompts = [
+            "నా మొక్కకు సరైన నేల తేమ ఎంత ఉండాలి?",
+            "టమాటా ఆకు మచ్చల నివారణ ఎలా చేయాలి?",
+            "పంపు ఆటోమేటిక్ ఇరిగేషన్ ఎలా పనిచేస్తుంది?"
+        ]
+    elif lang_code == "hi":
+        prompts = [
+            "पौधे के लिए उचित मिट्टी की नमी क्या है?",
+            "टमाटर की पत्तियों के रोगों का इलाज कैसे करें?",
+            "स्वचालित सिंचाई प्रणाली कैसे काम करती है?"
+        ]
+    else:
+        prompts = [
+            "What is the ideal soil moisture for tomatoes?",
+            "How does the automated pump fail-safe work?",
+            "How do I prevent fungal leaf blight?"
+        ]
+
+    for i, p in enumerate(prompts):
+        if suggested_cols[i].button(p, key=f"sug_btn_{i}", use_container_width=True):
+            suggested_query = p
+
     # Initialize Chat History
     if "chat_history" not in st.session_state:
         st.session_state.chat_history = []
@@ -680,6 +886,8 @@ elif app_mode == "🤖 KrishiNidhi AI Chatbot":
 
     # User chat input
     user_input = st.chat_input("Enter your agriculture related question...")
+    if suggested_query:
+        user_input = suggested_query
 
     if user_input:
         # Display user message
@@ -691,33 +899,51 @@ elif app_mode == "🤖 KrishiNidhi AI Chatbot":
         
         # Prepare historical requests
         formatted_history = []
+        assistant_messages = []
         for item in st.session_state.chat_history[:-1]:
             formatted_history.append({
                 "role": "user" if item["role"] == "user" else "model",
                 "text": item["text"]
             })
+            if assistant_answer_question and AssistantMessage and item["role"] in ("user", "assistant"):
+                assistant_messages.append(AssistantMessage(
+                    role=item["role"],
+                    content=item["text"]
+                ))
             
         # Generate chatbot reply
         with st.chat_message("assistant"):
             with st.spinner("KrishiNidhi is thinking..."):
-                chat_req = ChatRequest(
-                    message=user_input,
-                    history=formatted_history,
-                    language=chat_lang
-                )
-                try:
-                    # Run async chat response generator
-                    reply = run_async(generate_chat_response(chat_req))
-                except Exception as chat_err:
-                    st.error(f"Chat generation error: {chat_err}")
-                    reply = "I apologize, but I am unable to connect to the assistant services at the moment."
+                reply = None
+                # Try Multilingual Assistant Service first
+                if assistant_answer_question and AssistantRequest and lang_code in ("en", "te", "hi"):
+                    try:
+                        req_obj = AssistantRequest(
+                            message=user_input,
+                            language=lang_code,
+                            history=assistant_messages[-10:]
+                        )
+                        reply = run_async(assistant_answer_question(req_obj))
+                    except (AssistantUnavailable, Exception):
+                        reply = None
+
+                # Fallback to Gemini / PDF RAG
+                if not reply:
+                    chat_req = ChatRequest(
+                        message=user_input,
+                        history=formatted_history,
+                        language=chat_lang.split(" ")[0]
+                    )
+                    try:
+                        reply = run_async(generate_chat_response(chat_req))
+                    except Exception as chat_err:
+                        st.error(f"Chat generation error: {chat_err}")
+                        reply = "I apologize, but I am unable to connect to the assistant services at the moment."
                 
                 st.write(reply)
                 
         # Append response to history
         st.session_state.chat_history.append({"role": "assistant", "text": reply})
-        
-        # Clear/Rerun to keep layouts matching
         st.rerun()
 
     # Clear chat session
@@ -725,3 +951,4 @@ elif app_mode == "🤖 KrishiNidhi AI Chatbot":
         st.session_state.chat_history = []
         st.success("Chat history cleared!")
         st.rerun()
+
