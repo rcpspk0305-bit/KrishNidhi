@@ -1,5 +1,6 @@
 import threading
 import logging
+from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from app.routes import sensors, predict, chat, sms, dashboard
@@ -11,39 +12,8 @@ from app.models import db_models
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(name)s: %(message)s")
 logger = logging.getLogger("agritech_app")
 
-app = FastAPI(
-    title="AI-Powered Smart Plant Monitoring & Irrigation API",
-    description="Production-quality IoT Backend for ESP8266 NodeMCU, Soil Moisture, DHT11, PIR, 5V Relay Pump, and Next.js Dashboard.",
-    version="2.0.0",
-)
-
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=[
-        "http://localhost:3000",
-        "http://127.0.0.1:3000",
-        "http://localhost:3001",
-        "http://127.0.0.1:3001",
-        "*"
-    ],
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
-
-# API Suite for Smart Plant Monitoring IoT (supports both /api/v1/devices and /api/devices)
-app.include_router(api_v1_router)
-app.include_router(api_router)
-
-# Legacy / Companion Routes (Preserved for compatibility)
-app.include_router(sensors.router)
-app.include_router(predict.router)
-app.include_router(chat.router)
-app.include_router(sms.router)
-app.include_router(dashboard.router)
-
-@app.on_event("startup")
-def startup_event():
+@asynccontextmanager
+async def lifespan(app: FastAPI):
     logger.info("Initializing database tables...")
     init_db()
     
@@ -88,6 +58,40 @@ def startup_event():
         start_mqtt_background()
     except Exception as e:
         logger.warning(f"MQTT service background start skipped: {e}")
+
+    yield
+
+app = FastAPI(
+    title="AI-Powered Smart Plant Monitoring & Irrigation API",
+    description="Production-quality IoT Backend for ESP8266 NodeMCU, Soil Moisture, DHT11, PIR, 5V Relay Pump, and Next.js Dashboard.",
+    version="2.0.0",
+    lifespan=lifespan,
+)
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=[
+        "http://localhost:3000",
+        "http://127.0.0.1:3000",
+        "http://localhost:3001",
+        "http://127.0.0.1:3001",
+        "*"
+    ],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+# API Suite for Smart Plant Monitoring IoT (supports both /api/v1/devices and /api/devices)
+app.include_router(api_v1_router)
+app.include_router(api_router)
+
+# Legacy / Companion Routes (Preserved for compatibility)
+app.include_router(sensors.router)
+app.include_router(predict.router)
+app.include_router(chat.router)
+app.include_router(sms.router)
+app.include_router(dashboard.router)
 
 @app.get("/")
 def root():

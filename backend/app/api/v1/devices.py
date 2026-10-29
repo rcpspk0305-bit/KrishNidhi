@@ -56,7 +56,7 @@ def register_device(payload: DeviceCreate, db: Session = Depends(get_db)):
     db.commit()
     db.refresh(device)
 
-    resp = DeviceResponse.from_orm(device)
+    resp = DeviceResponse.model_validate(device)
     resp.api_key = raw_api_key  # Returned once upon registration
     return resp
 

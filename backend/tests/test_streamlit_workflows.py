@@ -20,10 +20,14 @@ def test_streamlit_app_loads_without_errors():
     """
     Test 1: Verify that streamlit_app.py boots up with zero unhandled exceptions.
     """
-    assert os.path.exists(STREAMLIT_APP_PATH), f"streamlit_app.py not found at {STREAMLIT_APP_PATH}"
+    assert os.path.exists(STREAMLIT_APP_PATH), (
+        f"streamlit_app.py not found at {STREAMLIT_APP_PATH}"
+    )
     at = AppTest.from_file(STREAMLIT_APP_PATH, default_timeout=35).run()
-    assert len(at.exception) == 0, f"AppTest threw exceptions on load: {[e.message for e in at.exception]}"
-    
+    assert len(at.exception) == 0, (
+        f"AppTest threw exceptions on load: {[e.message for e in at.exception]}"
+    )
+
     # Verify main title and subheader
     subheaders = [s.value for s in at.subheader]
     assert "Interactive Telemetry & Analytics" in subheaders
@@ -53,7 +57,9 @@ def test_realtime_dashboard_workflow():
 
     # Verify '🔄 Push Live Reading to DB' button exists
     push_button = [b for b in at.button if "Push Live Reading" in b.label]
-    assert len(push_button) == 1, "Expected Push Live Reading to DB button in simulator mode"
+    assert len(push_button) == 1, (
+        "Expected Push Live Reading to DB button in simulator mode"
+    )
 
     # Count existing readings in DB
     db = SessionLocal()
@@ -68,7 +74,9 @@ def test_realtime_dashboard_workflow():
     db = SessionLocal()
     new_count = db.query(db_models.SensorReading).count()
     db.close()
-    assert new_count >= initial_count + 1, f"Expected DB count to increase from {initial_count}, got {new_count}"
+    assert new_count >= initial_count + 1, (
+        f"Expected DB count to increase from {initial_count}, got {new_count}"
+    )
 
 
 def test_crop_recommendation_workflow():
@@ -84,7 +92,9 @@ def test_crop_recommendation_workflow():
 
     # Switch workspace to Crop Recommendation
     workspace_radio = at.sidebar.radio[0]
-    crop_option = [opt for opt in workspace_radio.options if "Crop Recommendation" in opt][0]
+    crop_option = [
+        opt for opt in workspace_radio.options if "Crop Recommendation" in opt
+    ][0]
     workspace_radio.set_value(crop_option).run()
     assert len(at.exception) == 0
 
@@ -111,7 +121,7 @@ def test_crop_recommendation_workflow():
         humidity=70.0,
         ph=6.5,
         rainfall=120.0,
-        tds=140.0
+        tds=140.0,
     )
     predicted_crop = predict_crop(sample_sensor)
     assert isinstance(predicted_crop, str)
@@ -131,7 +141,9 @@ def test_leaf_disease_diagnosis_workflow():
 
     # Switch workspace to Leaf Disease Diagnosis
     workspace_radio = at.sidebar.radio[0]
-    disease_option = [opt for opt in workspace_radio.options if "Leaf Disease" in opt][0]
+    disease_option = [opt for opt in workspace_radio.options if "Leaf Disease" in opt][
+        0
+    ]
     workspace_radio.set_value(disease_option).run()
     assert len(at.exception) == 0
 
@@ -157,9 +169,10 @@ def test_leaf_disease_diagnosis_workflow():
         crop="Tomato",
         disease=condition,
         sensor_data={"temperature": 27.0, "humidity": 65.0, "ph": 6.4},
-        language="English"
+        language="English",
     )
     import asyncio
+
     plan = asyncio.run(generate_action_plan(req))
     assert isinstance(plan, str)
     assert len(plan) > 20
@@ -191,9 +204,10 @@ def test_ai_chatbot_workflow():
     chat_req = ChatRequest(
         message="What is the recommended soil pH for growing tomatoes?",
         history=[],
-        language="English"
+        language="English",
     )
     import asyncio
+
     reply = asyncio.run(generate_chat_response(chat_req))
     assert isinstance(reply, str)
     assert len(reply) > 20

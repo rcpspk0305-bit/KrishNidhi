@@ -1,6 +1,6 @@
 from datetime import datetime
 from typing import Optional, List, Dict, Any
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, ConfigDict
 
 # ----------------- Device Schemas -----------------
 class DeviceCreate(BaseModel):
@@ -18,8 +18,7 @@ class DeviceResponse(BaseModel):
     created_at: datetime
     api_key: Optional[str] = None  # Returned ONLY on initial registration
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 class DeviceStatusResponse(BaseModel):
     device_id: str
@@ -57,8 +56,7 @@ class TelemetryResponse(BaseModel):
     pump_on: bool
     control_mode: str
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 class TelemetryHistoryResponse(BaseModel):
     device_id: str
@@ -79,8 +77,7 @@ class DeviceCommandItem(BaseModel):
     expires_at: datetime
     status: str
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 class CommandPollResponse(BaseModel):
     has_command: bool
@@ -110,8 +107,7 @@ class PumpEventResponse(BaseModel):
     reason: Optional[str] = None
     timestamp: datetime
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 # ----------------- Plant Profiles -----------------
 class PlantProfileUpdate(BaseModel):
@@ -135,8 +131,7 @@ class PlantProfileResponse(BaseModel):
     preferred_moisture_min: float
     preferred_moisture_max: float
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 # ----------------- Alerts -----------------
 class AlertResponse(BaseModel):
@@ -148,8 +143,7 @@ class AlertResponse(BaseModel):
     acknowledged: bool
     timestamp: datetime
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 # ----------------- Analytics & Recommendations -----------------
 class AnalyticsMetrics(BaseModel):
