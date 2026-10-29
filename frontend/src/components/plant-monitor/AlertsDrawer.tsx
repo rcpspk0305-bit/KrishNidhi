@@ -1,5 +1,6 @@
 "use client";
 
+import { useLanguage } from "@/components/LanguageProvider";
 import React from "react";
 import { AlertCircle, Check, BellRing } from "lucide-react";
 import { PlantAlert } from "@/types/plant-monitor";
@@ -11,6 +12,8 @@ interface Props {
 }
 
 export default function AlertsDrawer({ alerts, onAlertAcknowledged }: Props) {
+  const { t, intlLocale } = useLanguage();
+
   const unacknowledged = alerts.filter((a) => !a.acknowledged);
 
   if (unacknowledged.length === 0) return null;
@@ -27,7 +30,7 @@ export default function AlertsDrawer({ alerts, onAlertAcknowledged }: Props) {
   return (
     <div
       role="region"
-      aria-label="Active System Alerts"
+      aria-label={t("Active System Alerts")}
       className="botanical-card p-5"
       style={{
         backgroundColor: "var(--terracotta-50)",
@@ -37,11 +40,9 @@ export default function AlertsDrawer({ alerts, onAlertAcknowledged }: Props) {
       <div className="flex items-center justify-between mb-3">
         <div className="flex items-center gap-2 font-semibold text-sm" style={{ color: "var(--terracotta-700)" }}>
           <BellRing size={16} />
-          <span>Active Agronomic & Hardware Alerts ({unacknowledged.length})</span>
+          <span>{t("Active Agronomic & Hardware Alerts (")}{unacknowledged.length})</span>
         </div>
-        <span className="mono-tag" style={{ color: "var(--terracotta-600)" }}>
-          Requires Attention
-        </span>
+        <span className="mono-tag" style={{ color: "var(--terracotta-600)" }}>{t("Requires Attention")}</span>
       </div>
 
       <div className="flex flex-col gap-2.5">
@@ -62,10 +63,9 @@ export default function AlertsDrawer({ alerts, onAlertAcknowledged }: Props) {
                   {alert.message}
                 </p>
                 <p className="text-xs mt-0.5" style={{ color: "var(--text-muted)" }}>
-                  {new Date(alert.timestamp).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })} &bull;{" "}
+                  {t(new Date(alert.timestamp).toLocaleTimeString(intlLocale, { hour: "2-digit", minute: "2-digit" }))} &bull;{" "}
                   <span className="uppercase font-semibold tracking-wider text-[10px]">
-                    {alert.severity} priority
-                  </span>
+                    {alert.severity}{t("priority")}</span>
                 </p>
               </div>
             </div>
@@ -77,7 +77,7 @@ export default function AlertsDrawer({ alerts, onAlertAcknowledged }: Props) {
               style={{ borderRadius: "var(--radius-sm)" }}
             >
               <Check size={13} />
-              <span>Acknowledge</span>
+              <span>{t("Acknowledge")}</span>
             </button>
           </div>
         ))}

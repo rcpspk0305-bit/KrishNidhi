@@ -1,5 +1,6 @@
 "use client";
 
+import { useLanguage } from "@/components/LanguageProvider";
 import React from "react";
 import { Sprout, CheckCircle2, AlertTriangle, AlertOctagon, Droplets, Thermometer, Wind, Wifi, WifiOff, Clock } from "lucide-react";
 import { PlantRecommendation, PlantTelemetry, PlantDeviceStatus } from "@/types/plant-monitor";
@@ -12,8 +13,10 @@ interface Props {
 }
 
 export default function PlantHealthHero({ recommendation, latest, loading, deviceStatus }: Props) {
-  const healthScore = recommendation?.health_score ?? 85;
-  const status = recommendation?.status ?? "Optimal";
+  const { t, intlLocale } = useLanguage();
+
+  const healthScore = latest ? recommendation?.health_score ?? null : null;
+  const status = recommendation?.status ?? "No Telemetry";
   const plantName = recommendation?.plant_name ?? "Indoor Botanical Specimen";
 
   const getStatusMeta = (score: number) => {
@@ -38,7 +41,7 @@ export default function PlantHealthHero({ recommendation, latest, loading, devic
     };
   };
 
-  const statusMeta = getStatusMeta(healthScore);
+  const statusMeta = getStatusMeta(healthScore ?? 0);
 
   return (
     <div className="botanical-card p-6 md:p-8 flex flex-col gap-6 bg-white">
@@ -58,30 +61,28 @@ export default function PlantHealthHero({ recommendation, latest, loading, devic
 
           <div>
             <div className="flex items-center gap-2 flex-wrap mb-1">
-              <span className="mono-tag font-semibold uppercase tracking-wider" style={{ color: "var(--forest-600)" }}>
-                ESP8266 Telemetry Workspace
-              </span>
+              <span className="mono-tag font-semibold uppercase tracking-wider" style={{ color: "var(--forest-600)" }}>{t("ESP8266 Telemetry Workspace")}</span>
               <span className={statusMeta.pillClass}>
                 {statusMeta.icon}
-                <span>Health: {status}</span>
+                <span>{t("Health:")}{" "}{t(status)}</span>
               </span>
               <span className={deviceStatus?.online ? "pill-forest" : "pill-terracotta"}>
                 {deviceStatus?.online ? <Wifi size={12} /> : <WifiOff size={12} />}
-                <span>{deviceStatus?.online ? "Hardware Linked" : "Offline"}</span>
+                <span>{t(deviceStatus?.online ? "Hardware Linked" : "Offline")}</span>
               </span>
               <span className="pill-dew">
-                <span>Mode: {latest?.control_mode || deviceStatus?.control_mode || "AUTO"}</span>
+                <span>{t("Mode:")}{" "}{t(latest?.control_mode || deviceStatus?.control_mode || "AUTO")}</span>
               </span>
             </div>
 
             <h1 className="title-lg md:text-3xl font-serif text-forest-900 mt-1">
-              {plantName}
+              {t(plantName)}
             </h1>
             <p className="text-xs flex items-center gap-1.5 mt-1" style={{ color: "var(--text-muted)" }}>
               <Clock size={12} />
-              <span>Telemetry Timestamp:</span>
+              <span>{t("Telemetry Timestamp:")}</span>
               <span className="font-medium" style={{ color: "var(--text-secondary)" }}>
-                {latest?.timestamp ? new Date(latest.timestamp).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", second: "2-digit" }) : "Awaiting sensor broadcast"}
+                {t(latest?.timestamp ? new Date(latest.timestamp).toLocaleTimeString(intlLocale, { hour: "2-digit", minute: "2-digit", second: "2-digit" }) : "Awaiting sensor broadcast")}
               </span>
             </p>
           </div>
@@ -96,11 +97,9 @@ export default function PlantHealthHero({ recommendation, latest, loading, devic
           }}
         >
           <div className="text-right">
-            <span className="mono-tag block text-[11px] uppercase tracking-wider font-semibold" style={{ color: "var(--text-muted)" }}>
-              Agronomic Index
-            </span>
+            <span className="mono-tag block text-[11px] uppercase tracking-wider font-semibold" style={{ color: "var(--text-muted)" }}>{t("Agronomic Index")}</span>
             <div className="metric-num text-3xl font-serif mt-0.5" style={{ color: "var(--forest-800)" }}>
-              {loading ? "--" : healthScore}
+              {loading ? "--" : healthScore ?? t("N/A")}
               <span className="text-sm font-sans font-normal ml-1" style={{ color: "var(--text-muted)" }}>
                 / 100
               </span>
@@ -118,10 +117,10 @@ export default function PlantHealthHero({ recommendation, latest, loading, devic
         >
           <div className="flex items-center gap-1.5 text-xs font-medium" style={{ color: "var(--text-secondary)" }}>
             <Thermometer size={14} style={{ color: "var(--terracotta-600)" }} />
-            <span>Temperature</span>
+            <span>{t("Temperature")}</span>
           </div>
           <div className="metric-num text-2xl font-serif mt-1" style={{ color: "var(--text-primary)" }}>
-            {latest?.temperature != null ? `${latest.temperature.toFixed(1)}°C` : "N/A"}
+            {t(latest?.temperature != null ? `${latest.temperature.toFixed(1)}°C` : "N/A")}
           </div>
         </div>
 
@@ -132,10 +131,10 @@ export default function PlantHealthHero({ recommendation, latest, loading, devic
         >
           <div className="flex items-center gap-1.5 text-xs font-medium" style={{ color: "var(--text-secondary)" }}>
             <Wind size={14} style={{ color: "var(--dew-600)" }} />
-            <span>Humidity</span>
+            <span>{t("Humidity")}</span>
           </div>
           <div className="metric-num text-2xl font-serif mt-1" style={{ color: "var(--text-primary)" }}>
-            {latest?.humidity != null ? `${latest.humidity.toFixed(0)}%` : "N/A"}
+            {t(latest?.humidity != null ? `${latest.humidity.toFixed(0)}%` : "N/A")}
           </div>
         </div>
 
@@ -146,10 +145,10 @@ export default function PlantHealthHero({ recommendation, latest, loading, devic
         >
           <div className="flex items-center gap-1.5 text-xs font-medium" style={{ color: "var(--text-secondary)" }}>
             <Droplets size={14} style={{ color: "var(--forest-600)" }} />
-            <span>Soil Moisture</span>
+            <span>{t("Soil Moisture")}</span>
           </div>
           <div className="metric-num text-2xl font-serif mt-1" style={{ color: "var(--text-primary)" }}>
-            {latest?.soil_moisture != null ? `${latest.soil_moisture.toFixed(0)}%` : "N/A"}
+            {t(latest?.soil_moisture != null ? `${latest.soil_moisture.toFixed(0)}%` : "N/A")}
           </div>
         </div>
 
@@ -160,10 +159,10 @@ export default function PlantHealthHero({ recommendation, latest, loading, devic
         >
           <div className="flex items-center gap-1.5 text-xs font-medium" style={{ color: "var(--text-secondary)" }}>
             <Sprout size={14} style={{ color: "var(--gold-600)" }} />
-            <span>Control Mode</span>
+            <span>{t("Control Mode")}</span>
           </div>
           <div className="metric-num text-xl font-serif mt-1 uppercase" style={{ color: "var(--forest-700)" }}>
-            {latest?.control_mode || deviceStatus?.control_mode || "AUTO"}
+            {t(latest?.control_mode || deviceStatus?.control_mode || "AUTO")}
           </div>
         </div>
       </div>

@@ -1,5 +1,6 @@
 "use client";
 
+import { useLanguage } from "@/components/LanguageProvider";
 import React, { useState, useEffect } from "react";
 import { Cpu, Send, CheckCircle2, Play, Square, Sliders } from "lucide-react";
 import { plantApi } from "@/lib/plant-api";
@@ -17,6 +18,8 @@ export default function HardwareSimulatorPanel({
   currentMode,
   onTelemetryEmitted,
 }: Props) {
+  const { t } = useLanguage();
+
   const [isOpen, setIsOpen] = useState(false);
   const [simTemp, setSimTemp] = useState(26.5);
   const [simHumidity, setSimHumidity] = useState(60.0);
@@ -101,12 +104,8 @@ export default function HardwareSimulatorPanel({
             <Cpu size={18} />
           </div>
           <div>
-            <h4 className="font-serif font-bold text-sm" style={{ color: "var(--text-primary)" }}>
-              Virtual Hardware Test Bench
-            </h4>
-            <p className="text-xs" style={{ color: "var(--text-muted)" }}>
-              Simulate ESP8266 sensor packets and relay acknowledgments directly in the browser
-            </p>
+            <h4 className="font-serif font-bold text-sm" style={{ color: "var(--text-primary)" }}>{t("Virtual Hardware Test Bench")}</h4>
+            <p className="text-xs" style={{ color: "var(--text-muted)" }}>{t("Simulate ESP8266 sensor packets and relay acknowledgments directly in the browser")}</p>
           </div>
         </div>
 
@@ -116,7 +115,7 @@ export default function HardwareSimulatorPanel({
           className="btn-secondary text-xs py-1.5 px-3"
         >
           <Sliders size={13} />
-          <span>{isOpen ? "Close Test Bench" : "Open Test Bench"}</span>
+          <span>{t(isOpen ? "Close Test Bench" : "Open Test Bench")}</span>
         </button>
       </div>
 
@@ -127,7 +126,7 @@ export default function HardwareSimulatorPanel({
             {/* Temperature Slider */}
             <div>
               <div className="flex justify-between text-xs mb-1 font-medium" style={{ color: "var(--text-secondary)" }}>
-                <span>Temp (DHT11):</span>
+                <span>{t("Temp (DHT11):")}</span>
                 <strong className="mono-tag">{simTemp.toFixed(1)}°C</strong>
               </div>
               <input
@@ -145,7 +144,7 @@ export default function HardwareSimulatorPanel({
             {/* Humidity Slider */}
             <div>
               <div className="flex justify-between text-xs mb-1 font-medium" style={{ color: "var(--text-secondary)" }}>
-                <span>Humidity (DHT11):</span>
+                <span>{t("Humidity (DHT11):")}</span>
                 <strong className="mono-tag">{simHumidity.toFixed(0)}%</strong>
               </div>
               <input
@@ -163,7 +162,7 @@ export default function HardwareSimulatorPanel({
             {/* Soil Raw ADC Slider */}
             <div>
               <div className="flex justify-between text-xs mb-1 font-medium" style={{ color: "var(--text-secondary)" }}>
-                <span>Soil Moisture (A0):</span>
+                <span>{t("Soil Moisture (A0):")}</span>
                 <strong className="mono-tag">{simSoilRaw} ({simMoisturePct.toFixed(0)}%)</strong>
               </div>
               <input
@@ -180,9 +179,7 @@ export default function HardwareSimulatorPanel({
 
             {/* Motion Sensor Toggle */}
             <div className="flex items-center justify-between">
-              <span className="text-xs font-medium" style={{ color: "var(--text-secondary)" }}>
-                PIR Motion:
-              </span>
+              <span className="text-xs font-medium" style={{ color: "var(--text-secondary)" }}>{t("PIR Motion:")}</span>
               <button
                 type="button"
                 onClick={() => setSimMotion(!simMotion)}
@@ -190,7 +187,7 @@ export default function HardwareSimulatorPanel({
                   simMotion ? "pill-gold" : "btn-secondary"
                 }`}
               >
-                {simMotion ? "Motion Active" : "Field Clear"}
+                {t(simMotion ? "Motion Active" : "Field Clear")}
               </button>
             </div>
           </div>
@@ -203,7 +200,7 @@ export default function HardwareSimulatorPanel({
               className="btn-primary text-xs py-2 px-3.5"
             >
               <Send size={13} />
-              <span>Broadcast Telemetry Packet</span>
+              <span>{t("Broadcast Telemetry Packet")}</span>
             </button>
 
             <button
@@ -212,7 +209,7 @@ export default function HardwareSimulatorPanel({
               className={isAutoLoopActive ? "btn-terracotta text-xs py-2 px-3.5" : "btn-secondary text-xs py-2 px-3.5"}
             >
               {isAutoLoopActive ? <Square size={13} /> : <Play size={13} />}
-              <span>{isAutoLoopActive ? "Stop Firmware Auto-ACK" : "Start Firmware Auto-ACK"}</span>
+              <span>{t(isAutoLoopActive ? "Stop Firmware Auto-ACK" : "Start Firmware Auto-ACK")}</span>
             </button>
 
             {lastAckMessage && (

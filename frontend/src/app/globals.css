@@ -96,6 +96,16 @@ body {
   -moz-osx-font-smoothing: grayscale;
 }
 
+html:lang(te) body, html:lang(hi) body {
+  font-family: "Nirmala UI", "Noto Sans Telugu", "Noto Sans Devanagari", "Segoe UI", sans-serif;
+}
+html:lang(te) :is(h1,h2,h3,h4,.font-serif,.mono-tag), html:lang(hi) :is(h1,h2,h3,h4,.font-serif,.mono-tag) {
+  font-family: inherit;
+  letter-spacing: normal;
+  line-height: 1.7;
+}
+html:lang(te) .truncate, html:lang(hi) .truncate { white-space:normal; overflow-wrap:anywhere; }
+
 /* Botanical Card Styles */
 .botanical-card {
   background: var(--surface-card);

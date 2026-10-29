@@ -1,5 +1,6 @@
 "use client";
 
+import { useLanguage } from "@/components/LanguageProvider";
 import React, { useState } from "react";
 import {
   ResponsiveContainer,
@@ -21,10 +22,12 @@ interface Props {
 }
 
 export default function TelemetryTrendsChart({ data, onRefresh, loading }: Props) {
+  const { t, intlLocale } = useLanguage();
+
   const [selectedMetric, setSelectedMetric] = useState<"all" | "soil" | "temp" | "humidity" | "pump">("all");
 
   const formattedData = data.map((d) => {
-    const timeStr = d.timestamp ? new Date(d.timestamp).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }) : "";
+    const timeStr = d.timestamp ? new Date(d.timestamp).toLocaleTimeString(intlLocale, { hour: "2-digit", minute: "2-digit" }) : "";
     return {
       time: timeStr,
       temperature: d.temperature != null ? Number(d.temperature.toFixed(1)) : null,
@@ -50,10 +53,8 @@ export default function TelemetryTrendsChart({ data, onRefresh, loading }: Props
             <TrendingUp size={20} />
           </div>
           <div>
-            <h3 className="title-md font-serif text-lg">Environmental Telemetry Trends</h3>
-            <span className="mono-tag block" style={{ color: "var(--text-muted)" }}>
-              Chronological Microclimate Log from NodeMCU
-            </span>
+            <h3 className="title-md font-serif text-lg">{t("Environmental Telemetry Trends")}</h3>
+            <span className="mono-tag block" style={{ color: "var(--text-muted)" }}>{t("Chronological Microclimate Log from NodeMCU")}</span>
           </div>
         </div>
 
@@ -79,7 +80,7 @@ export default function TelemetryTrendsChart({ data, onRefresh, loading }: Props
                     cursor: "pointer",
                   }}
                 >
-                  {filter}
+                  {t(({ all: "All", soil: "Soil", temp: "Temperature", humidity: "Humidity", pump: "Pump" })[filter])}
                 </button>
               );
             })}
@@ -93,7 +94,7 @@ export default function TelemetryTrendsChart({ data, onRefresh, loading }: Props
               className="btn-secondary text-xs py-1.5 px-3"
             >
               <RefreshCw size={12} className={loading ? "animate-spin" : ""} />
-              <span>{loading ? "Syncing..." : "Sync"}</span>
+              <span>{t(loading ? "Syncing..." : "Sync")}</span>
             </button>
           )}
         </div>
@@ -108,9 +109,7 @@ export default function TelemetryTrendsChart({ data, onRefresh, loading }: Props
             borderColor: "var(--border-subtle)",
             color: "var(--text-muted)",
           }}
-        >
-          No historical telemetry points found. Telemetry will plot here once received from ESP8266.
-        </div>
+        >{t("No historical telemetry points found. Telemetry will plot here once received from ESP8266.")}</div>
       ) : (
         <div className="w-full h-72">
           <ResponsiveContainer width="100%" height="100%">
@@ -147,7 +146,7 @@ export default function TelemetryTrendsChart({ data, onRefresh, loading }: Props
                 <Line
                   type="monotone"
                   dataKey="soil_moisture"
-                  name="Soil Moisture (%)"
+                  name={t("Soil Moisture (%)")}
                   stroke="#254836"
                   strokeWidth={2.5}
                   dot={false}
@@ -158,7 +157,7 @@ export default function TelemetryTrendsChart({ data, onRefresh, loading }: Props
                 <Line
                   type="monotone"
                   dataKey="temperature"
-                  name="Temperature (°C)"
+                  name={t("Temperature (°C)")}
                   stroke="#bd5134"
                   strokeWidth={2}
                   dot={false}
@@ -169,7 +168,7 @@ export default function TelemetryTrendsChart({ data, onRefresh, loading }: Props
                 <Line
                   type="monotone"
                   dataKey="humidity"
-                  name="Humidity (% RH)"
+                  name={t("Humidity (% RH)")}
                   stroke="#31778c"
                   strokeWidth={2}
                   dot={false}
@@ -180,7 +179,7 @@ export default function TelemetryTrendsChart({ data, onRefresh, loading }: Props
                 <Line
                   type="stepAfter"
                   dataKey="pump_active"
-                  name="Pump Relay Active (0/100%)"
+                  name={t("Pump Relay Active (0/100%)")}
                   stroke="#b07c1e"
                   strokeWidth={2}
                   strokeDasharray="4 4"

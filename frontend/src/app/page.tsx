@@ -1,5 +1,8 @@
+"use client";
+
+import { useLanguage } from "@/components/LanguageProvider";
 import Link from "next/link";
-import { ArrowRight, Cpu, Landmark, Sprout, ShieldCheck, Activity } from "lucide-react";
+import { ArrowRight, Cpu, Landmark, Sprout, Activity } from "lucide-react";
 
 const modules = [
   {
@@ -32,6 +35,8 @@ const modules = [
 ];
 
 export default function HomePage() {
+  const { t } = useLanguage();
+
   return (
     <main className="section" style={{ backgroundColor: "var(--bg-canvas)" }}>
       <div className="page-shell flex flex-col gap-10">
@@ -41,31 +46,27 @@ export default function HomePage() {
           <div className="flex items-center gap-2 flex-wrap">
             <span className="pill-forest">
               <Sprout size={13} className="text-forest-700" />
-              <span>KrishiNidhi Botanical IoT Suite</span>
+              <span>{t("KrishiNidhi Botanical IoT Suite")}</span>
             </span>
             <span className="pill-dew">
               <Cpu size={13} />
-              <span>NodeMCU ESP8266 &bull; Server-Sent Events</span>
+              <span>{t("NodeMCU ESP8266 • Server-Sent Events")}</span>
             </span>
           </div>
 
           <div className="max-w-3xl">
-            <h1 className="title-xl mb-4">
-              Mindful Plant Telemetry &amp; Fail-Safe Automated Irrigation.
-            </h1>
-            <p className="text-base md:text-lg leading-relaxed" style={{ color: "var(--text-secondary)" }}>
-              A quieter, higher-fidelity workspace to monitor your plant&apos;s microclimate, observe soil hydration dynamics, and issue authoritative irrigation commands backed by hardware fail-safes and agronomic intelligence.
-            </p>
+            <h1 className="title-xl mb-4">{t("Mindful Plant Telemetry & Fail-Safe Automated Irrigation.")}</h1>
+            <p className="text-base md:text-lg leading-relaxed" style={{ color: "var(--text-secondary)" }}>{t("A quieter, higher-fidelity workspace to monitor your plant's microclimate, observe soil hydration dynamics, and issue authoritative irrigation commands backed by hardware fail-safes and agronomic intelligence.")}</p>
           </div>
 
           <div className="flex items-center gap-3 flex-wrap pt-2">
             <Link href="/plant-monitor" className="btn-primary">
-              <span>Launch Plant Workspace</span>
+              <span>{t("Launch Plant Workspace")}</span>
               <ArrowRight size={16} />
             </Link>
             <Link href="/scheme-finder" className="btn-secondary">
               <Landmark size={15} />
-              <span>Agricultural Scheme Finder</span>
+              <span>{t("Agricultural Scheme Finder")}</span>
             </Link>
           </div>
 
@@ -73,24 +74,24 @@ export default function HomePage() {
             <div className="flex items-start gap-3">
               <span className="w-2 h-2 rounded-full mt-2" style={{ backgroundColor: "var(--forest-600)" }} />
               <div>
-                <strong className="block text-sm font-serif" style={{ color: "var(--forest-900)" }}>Hardware-Authoritative</strong>
-                <span className="text-xs" style={{ color: "var(--text-muted)" }}>Firmware acknowledgments represent true relay coil status.</span>
+                <strong className="block text-sm font-serif" style={{ color: "var(--forest-900)" }}>{t("Hardware-Authoritative")}</strong>
+                <span className="text-xs" style={{ color: "var(--text-muted)" }}>{t("Firmware acknowledgments represent true relay coil status.")}</span>
               </div>
             </div>
 
             <div className="flex items-start gap-3">
               <span className="w-2 h-2 rounded-full mt-2" style={{ backgroundColor: "var(--terracotta-600)" }} />
               <div>
-                <strong className="block text-sm font-serif" style={{ color: "var(--forest-900)" }}>Watchdog Protection</strong>
-                <span className="text-xs" style={{ color: "var(--text-muted)" }}>15s runtime cutoff and 60s cooldown prevent water damage.</span>
+                <strong className="block text-sm font-serif" style={{ color: "var(--forest-900)" }}>{t("Watchdog Protection")}</strong>
+                <span className="text-xs" style={{ color: "var(--text-muted)" }}>{t("15s runtime cutoff and 60s cooldown prevent water damage.")}</span>
               </div>
             </div>
 
             <div className="flex items-start gap-3">
               <span className="w-2 h-2 rounded-full mt-2" style={{ backgroundColor: "var(--dew-600)" }} />
               <div>
-                <strong className="block text-sm font-serif" style={{ color: "var(--forest-900)" }}>Live Telemetry Broadcast</strong>
-                <span className="text-xs" style={{ color: "var(--text-muted)" }}>Sub-second SSE updates with graceful polling resilience.</span>
+                <strong className="block text-sm font-serif" style={{ color: "var(--forest-900)" }}>{t("Live Telemetry Broadcast")}</strong>
+                <span className="text-xs" style={{ color: "var(--text-muted)" }}>{t("Sub-second SSE updates with graceful polling resilience.")}</span>
               </div>
             </div>
           </div>
@@ -107,7 +108,7 @@ export default function HomePage() {
               >
                 <div>
                   <div className="flex justify-between items-center mb-4">
-                    <span className="pill-forest text-[11px]">{item.badge}</span>
+                    <span className="pill-forest text-[11px]">{t(item.badge)}</span>
                     <div
                       className="p-2 rounded-xl"
                       style={{ backgroundColor: "var(--forest-50)", color: "var(--forest-800)" }}
@@ -117,10 +118,10 @@ export default function HomePage() {
                   </div>
 
                   <h3 className="title-md font-serif text-lg mb-2">
-                    {item.title}
+                    {t(item.title)}
                   </h3>
                   <p className="text-xs leading-relaxed" style={{ color: "var(--text-secondary)" }}>
-                    {item.desc}
+                    {t(item.desc)}
                   </p>
                 </div>
 
@@ -129,7 +130,7 @@ export default function HomePage() {
                     href={item.href}
                     className={item.primary ? "btn-primary w-full text-xs py-2.5" : "btn-secondary w-full text-xs py-2.5"}
                   >
-                    <span>{item.cta}</span>
+                    <span>{t(item.cta)}</span>
                     <ArrowRight size={14} />
                   </Link>
                 </div>
@@ -140,12 +141,8 @@ export default function HomePage() {
 
         {/* Editorial Footer */}
         <footer className="text-center text-xs py-8 border-t" style={{ borderColor: "var(--border-subtle)", color: "var(--text-muted)" }}>
-          <p className="font-serif italic text-sm mb-1" style={{ color: "var(--text-secondary)" }}>
-            KrishiNidhi Botanical Systems &bull; Department of Computer Science &amp; Engineering
-          </p>
-          <p className="mono-tag text-[11px]">
-            NodeMCU ESP8266 ESP-12E Architecture &bull; Next.js 16 &bull; Warm Editorial Botanical Edition
-          </p>
+          <p className="font-serif italic text-sm mb-1" style={{ color: "var(--text-secondary)" }}>{t("KrishiNidhi Botanical Systems • Department of Computer Science & Engineering")}</p>
+          <p className="mono-tag text-[11px]">{t("NodeMCU ESP8266 ESP-12E Architecture • Next.js 16 • Warm Editorial Botanical Edition")}</p>
         </footer>
 
       </div>

@@ -1,8 +1,9 @@
 "use client";
 
+import { useLanguage } from "@/components/LanguageProvider";
 import React, { useState, useEffect, useCallback, useMemo } from "react";
 import Link from "next/link";
-import { ArrowLeft, RefreshCw, Sprout, Landmark, Home, AlertCircle, Clock, ShieldCheck } from "lucide-react";
+import { RefreshCw, Landmark, Home, Clock } from "lucide-react";
 import PlantHealthHero from "./PlantHealthHero";
 import SensorCardsGrid from "./SensorCardsGrid";
 import PumpControlWidget from "./PumpControlWidget";
@@ -27,6 +28,8 @@ interface Props {
 }
 
 export default function PlantWorkspace({ initialDeviceId = "esp8266-plant-01" }: Props) {
+  const { t, locale } = useLanguage();
+
   const [deviceId] = useState<string>(initialDeviceId);
   const [telemetry, setTelemetry] = useState<PlantTelemetry | null>(null);
   const [history, setHistory] = useState<PlantTelemetry[]>([]);
@@ -35,12 +38,13 @@ export default function PlantWorkspace({ initialDeviceId = "esp8266-plant-01" }:
   const [alerts, setAlerts] = useState<PlantAlert[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [syncing, setSyncing] = useState<boolean>(false);
-  const [now, setNow] = useState<number>(Date.now());
+  const [now, setNow] = useState<number>(0);
 
   // Keep now updated every 5 seconds for accurate stale data detection
   useEffect(() => {
+    const initial = setTimeout(() => setNow(Date.now()), 0);
     const timer = setInterval(() => setNow(Date.now()), 5000);
-    return () => clearInterval(timer);
+    return () => { clearTimeout(initial); clearInterval(timer); };
   }, []);
 
   const dataIsFresh = useMemo(() => {
@@ -55,7 +59,7 @@ export default function PlantWorkspace({ initialDeviceId = "esp8266-plant-01" }:
         plantApi.getLatestTelemetry(deviceId),
         plantApi.getTelemetryHistory(deviceId, 24, 60),
         plantApi.getDeviceStatus(deviceId),
-        plantApi.getRecommendations(deviceId),
+        plantApi.getRecommendations(deviceId, locale),
         plantApi.getAlerts(deviceId),
       ]);
 
@@ -72,13 +76,13 @@ export default function PlantWorkspace({ initialDeviceId = "esp8266-plant-01" }:
       setLoading(false);
       setSyncing(false);
     }
-  }, [deviceId]);
+  }, [deviceId, locale]);
 
   useEffect(() => {
-    refreshAllData();
+    const initial = setTimeout(() => void refreshAllData(), 0);
     // Fallback polling every 15s in case SSE is interrupted
     const interval = setInterval(refreshAllData, 15000);
-    return () => clearInterval(interval);
+    return () => { clearTimeout(initial); clearInterval(interval); };
   }, [refreshAllData]);
 
   // Connect to live Server-Sent Events (SSE)
@@ -106,7 +110,7 @@ export default function PlantWorkspace({ initialDeviceId = "esp8266-plant-01" }:
           ? {
               ...prev,
               pump_state: data.confirmed_state,
-              control_mode: data.control_mode as any,
+              control_mode: data.control_mode as PlantDeviceStatus["control_mode"],
               last_watering_time: data.confirmed_state ? (data.timestamp || new Date().toISOString()) : prev.last_watering_time,
             }
           : null
@@ -127,19 +131,15 @@ export default function PlantWorkspace({ initialDeviceId = "esp8266-plant-01" }:
             <Link
               href="/"
               className="btn-secondary py-2 px-3 text-xs"
-              aria-label="Return to Portal Homepage"
+              aria-label={t("Return to Portal Homepage")}
             >
               <Home size={15} />
-              <span>Portal</span>
+              <span>{t("Portal")}</span>
             </Link>
 
             <div>
-              <span className="mono-tag font-bold uppercase tracking-wider" style={{ color: "var(--forest-600)" }}>
-                KrishiNidhi Botanical Console
-              </span>
-              <h2 className="title-md font-serif text-xl" style={{ color: "var(--forest-900)" }}>
-                Smart Plant &amp; Irrigation Station
-              </h2>
+              <span className="mono-tag font-bold uppercase tracking-wider" style={{ color: "var(--forest-600)" }}>{t("KrishiNidhi Botanical Console")}</span>
+              <h2 className="title-md font-serif text-xl" style={{ color: "var(--forest-900)" }}>{t("Smart Plant & Irrigation Station")}</h2>
             </div>
           </div>
 
@@ -155,10 +155,10 @@ export default function PlantWorkspace({ initialDeviceId = "esp8266-plant-01" }:
               onClick={refreshAllData}
               disabled={syncing}
               className="btn-secondary text-xs py-2 px-3.5"
-              aria-label="Synchronize plant data"
+              aria-label={t("Synchronize plant data")}
             >
               <RefreshCw size={13} className={syncing ? "animate-spin text-forest-700" : "text-forest-700"} />
-              <span>{syncing ? "Syncing..." : "Sync"}</span>
+              <span>{t(syncing ? "Syncing..." : "Sync")}</span>
             </button>
 
             <Link
@@ -166,7 +166,7 @@ export default function PlantWorkspace({ initialDeviceId = "esp8266-plant-01" }:
               className="btn-secondary text-xs py-2 px-3"
             >
               <Landmark size={14} className="text-forest-700" />
-              <span>Scheme Finder</span>
+              <span>{t("Scheme Finder")}</span>
             </Link>
           </div>
         </header>
@@ -183,17 +183,13 @@ export default function PlantWorkspace({ initialDeviceId = "esp8266-plant-01" }:
           >
             <div className="flex items-center gap-2 font-medium">
               <Clock size={15} />
-              <span>
-                Telemetry is currently stale (&gt;35s without packet). Displaying last known sensor readings.
-              </span>
+              <span>{t("Telemetry is currently stale (>35s without packet). Displaying last known sensor readings.")}</span>
             </div>
             <button
               type="button"
               onClick={refreshAllData}
               className="underline font-semibold ml-2"
-            >
-              Retry Sync
-            </button>
+            >{t("Retry Sync")}</button>
           </div>
         )}
 
@@ -247,12 +243,8 @@ export default function PlantWorkspace({ initialDeviceId = "esp8266-plant-01" }:
 
         {/* Footer */}
         <footer className="text-center text-xs py-6 border-t mt-4" style={{ borderColor: "var(--border-subtle)", color: "var(--text-muted)" }}>
-          <p className="font-serif italic text-sm mb-1" style={{ color: "var(--text-secondary)" }}>
-            &ldquo;KrishiNidhi — Mindful environmental stewardship and botanical vitality.&rdquo;
-          </p>
-          <p className="mono-tag text-[11px]">
-            ESP8266 NodeMCU ESP-12E Architecture &bull; Computer Science &amp; Engineering Final Project &bull; Warm Editorial Botanical Edition
-          </p>
+          <p className="font-serif italic text-sm mb-1" style={{ color: "var(--text-secondary)" }}>{t("“KrishiNidhi — Mindful environmental stewardship and botanical vitality.”")}</p>
+          <p className="mono-tag text-[11px]">{t("ESP8266 NodeMCU ESP-12E Architecture • Computer Science & Engineering Final Project • Warm Editorial Botanical Edition")}</p>
         </footer>
       </div>
     </main>

@@ -92,8 +92,8 @@ export const plantApi = {
     return res.data;
   },
 
-  getRecommendations: async (deviceId: string): Promise<PlantRecommendation> => {
-    const res = await apiClient.get(`/devices/${deviceId}/recommendations`);
+  getRecommendations: async (deviceId: string, language: "en" | "te" | "hi" = "en"): Promise<PlantRecommendation> => {
+    const res = await apiClient.get(`/devices/${deviceId}/recommendations`, { params: { language } });
     return res.data;
   },
 

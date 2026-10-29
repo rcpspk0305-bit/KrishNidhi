@@ -66,6 +66,7 @@ export interface PlantAnalytics {
 }
 
 export interface PlantRecommendation {
+  language?: "en" | "te" | "hi";
   device_id: string;
   plant_name: string;
   health_score: number;

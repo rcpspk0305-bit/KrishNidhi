@@ -1,5 +1,6 @@
 "use client";
 
+import { useLanguage } from "@/components/LanguageProvider";
 import React, { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { 
@@ -53,13 +54,16 @@ const schemes = [
 ];
 
 export default function SchemeFinder() {
+  const { t } = useLanguage();
+
   const [search, setSearch] = useState("");
   const [activeCategory, setActiveCategory] = useState("All");
 
   const categories = ["All", "Income Support", "Insurance", "Soil Health", "Pension"];
 
   const filtered = schemes.filter(s => {
-    const matchesSearch = s.title.toLowerCase().includes(search.toLowerCase());
+    const query = search.trim().toLocaleLowerCase();
+    const matchesSearch = [s.title, s.desc, t(s.title), t(s.desc)].some((text) => text.toLocaleLowerCase().includes(query));
     const matchesCat = activeCategory === "All" || s.category === activeCategory;
     return matchesSearch && matchesCat;
   });
@@ -75,7 +79,7 @@ export default function SchemeFinder() {
           </Link>
           <div>
             <h1 className="font-display text-xl font-bold tracking-tight text-on-surface uppercase">KrishiNidhi</h1>
-            <p className="text-[10px] font-bold text-primary tracking-widest uppercase">Benefit Directory</p>
+            <p className="text-[10px] font-bold text-primary tracking-widest uppercase">{t("Benefit Directory")}</p>
           </div>
         </div>
       </header>
@@ -88,10 +92,10 @@ export default function SchemeFinder() {
         >
           <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-primary-container/10">
             <Landmark className="h-4 w-4 text-primary" />
-            <span className="text-[10px] font-bold text-primary tracking-widest uppercase">Official Governance Portal</span>
+            <span className="text-[10px] font-bold text-primary tracking-widest uppercase">{t("Official Governance Portal")}</span>
           </div>
-          <h2 className="font-display text-5xl font-black tracking-tight text-on-surface">SCHEME FINDER</h2>
-          <p className="text-slate-500 text-base max-w-lg mx-auto">Discover agricultural subsidies and support programs tailored to your field telemetry and regional classification.</p>
+          <h2 className="font-display text-5xl font-black tracking-tight text-on-surface">{t("SCHEME FINDER")}</h2>
+          <p className="text-slate-500 text-base max-w-lg mx-auto">{t("Discover agricultural subsidies and support programs tailored to your field telemetry and regional classification.")}</p>
         </motion.div>
 
         <div className="flex flex-col md:flex-row gap-4">
@@ -99,7 +103,7 @@ export default function SchemeFinder() {
             <Search className="absolute left-5 top-1/2 -translate-y-1/2 h-5 w-5 text-slate-400" />
             <input 
               type="text" 
-              placeholder="Search by name or keyword..." 
+              placeholder={t("Search by name or keyword...")} 
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               className="w-full bg-white rounded-2xl pl-14 pr-6 py-4 text-on-surface ambient-shadow focus:outline-none focus:ring-2 focus:ring-primary-container transition-all"
@@ -117,7 +121,7 @@ export default function SchemeFinder() {
                   : "bg-white text-slate-500 hover:text-primary"
                 }`}
               >
-                {cat}
+                {t(cat)}
               </button>
             ))}
           </div>
@@ -140,17 +144,17 @@ export default function SchemeFinder() {
                     <TrendingUp className="h-6 w-6 text-primary" />
                   </div>
                   <div className="flex gap-2">
-                    {s.tags.map(t => (
-                      <span key={t} className="text-[8px] font-bold tracking-widest text-slate-400 uppercase border border-slate-100 px-3 py-1 rounded-full">{t}</span>
+                    {s.tags.map(tag => (
+                      <span key={tag} className="text-[8px] font-bold tracking-widest text-slate-400 uppercase border border-slate-100 px-3 py-1 rounded-full">{t(tag)}</span>
                     ))}
                   </div>
                 </div>
 
                 <h3 className="font-display text-xl font-bold text-on-surface mb-2 group-hover:text-primary transition-colors">
-                  {s.title}
+                  {t(s.title)}
                 </h3>
                 <p className="text-slate-500 text-sm mb-6 flex-1 line-clamp-3">
-                  {s.desc}
+                  {t(s.desc)}
                 </p>
 
                 <div className="space-y-4 mb-8 bg-surface-container-low/50 p-4 rounded-2xl">
@@ -159,8 +163,8 @@ export default function SchemeFinder() {
                       <Users className="h-4 w-4 text-secondary" />
                     </div>
                     <div>
-                      <p className="text-[8px] font-bold text-slate-400 uppercase tracking-widest">Eligibility</p>
-                      <p className="text-xs font-bold text-on-surface">{s.eligibility}</p>
+                      <p className="text-[8px] font-bold text-slate-400 uppercase tracking-widest">{t("Eligibility")}</p>
+                      <p className="text-xs font-bold text-on-surface">{t(s.eligibility)}</p>
                     </div>
                   </div>
                   <div className="flex items-center gap-3">
@@ -168,15 +172,13 @@ export default function SchemeFinder() {
                       <Calendar className="h-4 w-4 text-primary" />
                     </div>
                     <div>
-                      <p className="text-[8px] font-bold text-slate-400 uppercase tracking-widest">Benefit Amount</p>
-                      <p className="text-xs font-bold text-primary">{s.benefit}</p>
+                      <p className="text-[8px] font-bold text-slate-400 uppercase tracking-widest">{t("Benefit Amount")}</p>
+                      <p className="text-xs font-bold text-primary">{t(s.benefit)}</p>
                     </div>
                   </div>
                 </div>
 
-                <button className="w-full py-4 bg-primary text-white rounded-2xl text-[10px] font-bold tracking-[0.2em] uppercase glow-primary hover:brightness-110 transition-all flex items-center justify-center gap-2">
-                  Access Portal
-                  <ExternalLink className="h-3 w-3" />
+                <button className="w-full py-4 bg-primary text-white rounded-2xl text-[10px] font-bold tracking-[0.2em] uppercase glow-primary hover:brightness-110 transition-all flex items-center justify-center gap-2">{t("Access Portal")}<ExternalLink className="h-3 w-3" />
                 </button>
               </motion.div>
             ))}

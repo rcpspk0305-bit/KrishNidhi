@@ -1,5 +1,6 @@
 "use client";
 
+import { useLanguage } from "@/components/LanguageProvider";
 import React from "react";
 import { Thermometer, Droplets, Wind, Radio } from "lucide-react";
 import { PlantTelemetry } from "@/types/plant-monitor";
@@ -10,6 +11,8 @@ interface Props {
 }
 
 export default function SensorCardsGrid({ telemetry, loading }: Props) {
+  const { t } = useLanguage();
+
   const temp = telemetry?.temperature ?? null;
   const humidity = telemetry?.humidity ?? null;
   const soilPct = telemetry?.soil_moisture ?? null;
@@ -33,7 +36,7 @@ export default function SensorCardsGrid({ telemetry, loading }: Props) {
               >
                 <Thermometer size={16} />
               </div>
-              <span>Ambient Temp (DHT11)</span>
+              <span>{t("Ambient Temp (DHT11)")}</span>
             </div>
             <span className="mono-tag" style={{ color: "var(--text-muted)" }}>
               GPIO 12 / D6
@@ -52,14 +55,14 @@ export default function SensorCardsGrid({ telemetry, loading }: Props) {
 
         <div className="pt-3 border-t text-xs" style={{ borderColor: "var(--border-subtle)", color: "var(--text-muted)" }}>
           <div className="flex items-center justify-between">
-            <span>Target: 18.0°C – 30.0°C</span>
+            <span>{t("Target: 18.0°C – 30.0°C")}</span>
             <span
               className="w-2 h-2 rounded-full"
               style={{ backgroundColor: isTempOptimal ? "var(--forest-600)" : "var(--gold-600)" }}
             />
           </div>
           <p className="mt-1 font-medium" style={{ color: isTempOptimal ? "var(--forest-700)" : "var(--gold-700)" }}>
-            {temp != null ? (isTempOptimal ? "Optimal Microclimate" : "Temperature Variance") : "Pending read"}
+            {t(temp != null ? (isTempOptimal ? "Optimal Microclimate" : "Temperature Variance") : "Pending read")}
           </p>
         </div>
       </div>
@@ -75,7 +78,7 @@ export default function SensorCardsGrid({ telemetry, loading }: Props) {
               >
                 <Wind size={16} />
               </div>
-              <span>Relative Humidity</span>
+              <span>{t("Relative Humidity")}</span>
             </div>
             <span className="mono-tag" style={{ color: "var(--text-muted)" }}>
               1-Wire Digital
@@ -94,14 +97,14 @@ export default function SensorCardsGrid({ telemetry, loading }: Props) {
 
         <div className="pt-3 border-t text-xs" style={{ borderColor: "var(--border-subtle)", color: "var(--text-muted)" }}>
           <div className="flex items-center justify-between">
-            <span>Target: 50% – 75% RH</span>
+            <span>{t("Target: 50% – 75% RH")}</span>
             <span
               className="w-2 h-2 rounded-full"
               style={{ backgroundColor: isHumidityOptimal ? "var(--forest-600)" : "var(--dew-600)" }}
             />
           </div>
           <p className="mt-1 font-medium" style={{ color: isHumidityOptimal ? "var(--forest-700)" : "var(--dew-700)" }}>
-            {humidity != null ? (isHumidityOptimal ? "Comfort Zone" : "Sub-optimal VPD") : "Pending read"}
+            {t(humidity != null ? (isHumidityOptimal ? "Comfort Zone" : "Sub-optimal VPD") : "Pending read")}
           </p>
         </div>
       </div>
@@ -117,7 +120,7 @@ export default function SensorCardsGrid({ telemetry, loading }: Props) {
               >
                 <Droplets size={16} />
               </div>
-              <span>Soil Moisture (LM393)</span>
+              <span>{t("Soil Moisture (LM393)")}</span>
             </div>
             <span className="mono-tag" style={{ color: "var(--text-muted)" }}>
               ADC 0 / A0
@@ -135,8 +138,7 @@ export default function SensorCardsGrid({ telemetry, loading }: Props) {
               %
             </span>
             {soilRaw != null && (
-              <span className="mono-tag ml-auto" style={{ color: "var(--text-muted)" }}>
-                Raw: {soilRaw}
+              <span className="mono-tag ml-auto" style={{ color: "var(--text-muted)" }}>{t("Raw:")}{soilRaw}
               </span>
             )}
           </div>
@@ -157,8 +159,8 @@ export default function SensorCardsGrid({ telemetry, loading }: Props) {
         </div>
 
         <div className="pt-3 border-t text-xs flex justify-between" style={{ borderColor: "var(--border-subtle)", color: "var(--text-muted)" }}>
-          <span>Auto-on: &lt;30%</span>
-          <span>Target cutoff: 55%</span>
+          <span>{t("Auto-on: <30%")}</span>
+          <span>{t("Target cutoff: 55%")}</span>
         </div>
       </div>
 
@@ -176,7 +178,7 @@ export default function SensorCardsGrid({ telemetry, loading }: Props) {
               >
                 <Radio size={16} />
               </div>
-              <span>PIR Motion Sensor</span>
+              <span>{t("PIR Motion Sensor")}</span>
             </div>
             <span className="mono-tag" style={{ color: "var(--text-muted)" }}>
               GPIO 13 / D7
@@ -195,13 +197,13 @@ export default function SensorCardsGrid({ telemetry, loading }: Props) {
               className="font-serif font-semibold text-xl"
               style={{ color: motion ? "var(--gold-700)" : "var(--text-secondary)" }}
             >
-              {motion ? "Motion Detected" : "Field Clear"}
+              {t(motion ? "Motion Detected" : "Field Clear")}
             </span>
           </div>
         </div>
 
         <div className="pt-3 border-t text-xs" style={{ borderColor: "var(--border-subtle)", color: "var(--text-muted)" }}>
-          <span>Passive infrared detection around planter perimeter.</span>
+          <span>{t("Passive infrared detection around planter perimeter.")}</span>
         </div>
       </div>
     </div>

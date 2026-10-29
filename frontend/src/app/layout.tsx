@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import localFont from "next/font/local";
 import { Toaster } from "sonner";
 import "./globals.css";
+import ApplicationShell from "@/components/ApplicationShell";
 
 const geistSans = localFont({
   src: "./fonts/geist-latin.woff2",
@@ -32,7 +33,7 @@ export default function RootLayout({
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col">
-        {children}
+        <ApplicationShell>{children}</ApplicationShell>
         <Toaster position="bottom-right" richColors />
       </body>
     </html>

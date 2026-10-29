@@ -1,7 +1,8 @@
 "use client";
 
+import { useLanguage } from "@/components/LanguageProvider";
 import React, { useState } from "react";
-import { Power, ShieldAlert, CheckCircle2, Clock, Loader2, Sparkles } from "lucide-react";
+import { Power, ShieldAlert, CheckCircle2, Clock, Loader2 } from "lucide-react";
 import { plantApi } from "@/lib/plant-api";
 
 interface Props {
@@ -21,6 +22,8 @@ export default function PumpControlWidget({
   lastWateringTime,
   pumpRuntimeSeconds,
 }: Props) {
+  const { t, intlLocale } = useLanguage();
+
   const [submitting, setSubmitting] = useState(false);
   const [pendingAction, setPendingAction] = useState<string | null>(null);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
@@ -79,10 +82,8 @@ export default function PumpControlWidget({
             <Power size={20} />
           </div>
           <div>
-            <h3 className="title-md font-serif text-lg">Irrigation Pump Controller</h3>
-            <span className="mono-tag block" style={{ color: "var(--text-muted)" }}>
-              Relay IN: GPIO 14 (D5) &bull; Active-LOW Optocoupled
-            </span>
+            <h3 className="title-md font-serif text-lg">{t("Irrigation Pump Controller")}</h3>
+            <span className="mono-tag block" style={{ color: "var(--text-muted)" }}>{t("Relay IN: GPIO 14 (D5) • Active-LOW Optocoupled")}</span>
           </div>
         </div>
 
@@ -96,7 +97,7 @@ export default function PumpControlWidget({
             }}
           />
           <span className="font-semibold uppercase tracking-wider text-[11px]">
-            {confirmedPumpOn ? "Relay Closed (Irrigating)" : "Relay Open (Standby)"}
+            {t(confirmedPumpOn ? "Relay Closed (Irrigating)" : "Relay Open (Standby)")}
           </span>
         </div>
       </div>
@@ -112,7 +113,7 @@ export default function PumpControlWidget({
           }}
         >
           <ShieldAlert size={16} className="shrink-0" />
-          <span>{errorMsg}</span>
+          <span>{t(errorMsg)}</span>
         </div>
       )}
 
@@ -127,7 +128,7 @@ export default function PumpControlWidget({
           }}
         >
           <Loader2 size={15} className="animate-spin shrink-0" />
-          <span>{pendingAction}... Awaiting ESP8266 acknowledgment packet.</span>
+          <span>{t(pendingAction)}{t("... Awaiting ESP8266 acknowledgment packet.")}</span>
         </div>
       )}
 
@@ -135,9 +136,7 @@ export default function PumpControlWidget({
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 items-center">
         {/* Operating Control Mode Selector */}
         <div>
-          <label className="mono-tag font-semibold block mb-2" style={{ color: "var(--text-secondary)" }}>
-            OPERATING MODE
-          </label>
+          <label className="mono-tag font-semibold block mb-2" style={{ color: "var(--text-secondary)" }}>{t("OPERATING MODE")}</label>
           <div
             className="flex p-1 rounded-xl border"
             style={{ backgroundColor: "var(--bg-subtle)", borderColor: "var(--border-subtle)" }}
@@ -159,7 +158,7 @@ export default function PumpControlWidget({
                     cursor: submitting ? "not-allowed" : "pointer",
                   }}
                 >
-                  {m}
+                  {t(m)}
                 </button>
               );
             })}
@@ -168,9 +167,7 @@ export default function PumpControlWidget({
 
         {/* Direct Actuator Trigger Button */}
         <div>
-          <label className="mono-tag font-semibold block mb-2" style={{ color: "var(--text-secondary)" }}>
-            MANUAL RELAY ACTUATION
-          </label>
+          <label className="mono-tag font-semibold block mb-2" style={{ color: "var(--text-secondary)" }}>{t("MANUAL RELAY ACTUATION")}</label>
           <button
             type="button"
             onClick={handleTogglePump}
@@ -187,11 +184,11 @@ export default function PumpControlWidget({
               <Power size={16} />
             )}
             <span>
-              {confirmedPumpOn
+              {t(confirmedPumpOn
                 ? "Turn Off Pump (Manual)"
                 : currentMode === "MANUAL"
                 ? "Actuate Pump (Manual)"
-                : "Active in MANUAL Mode Only"}
+                : "Active in MANUAL Mode Only")}
             </span>
           </button>
         </div>
@@ -203,32 +200,30 @@ export default function PumpControlWidget({
         style={{ backgroundColor: "var(--bg-subtle)", borderColor: "var(--border-subtle)" }}
       >
         <div>
-          <span className="block" style={{ color: "var(--text-muted)" }}>Last Watering</span>
+          <span className="block" style={{ color: "var(--text-muted)" }}>{t("Last Watering")}</span>
           <strong className="font-serif text-sm mt-0.5 block" style={{ color: "var(--text-primary)" }}>
-            {lastWateringTime
-              ? new Date(lastWateringTime).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
-              : "None recorded"}
+            {t(lastWateringTime
+              ? new Date(lastWateringTime).toLocaleTimeString(intlLocale, { hour: "2-digit", minute: "2-digit" })
+              : "None recorded")}
           </strong>
         </div>
 
         <div>
-          <span className="block" style={{ color: "var(--text-muted)" }}>Current Run</span>
+          <span className="block" style={{ color: "var(--text-muted)" }}>{t("Current Run")}</span>
           <strong
             className="font-serif text-sm mt-0.5 block"
             style={{ color: confirmedPumpOn ? "var(--terracotta-600)" : "var(--text-primary)" }}
           >
-            {confirmedPumpOn ? `${pumpRuntimeSeconds || 0}s (Active)` : "0s (Standby)"}
+            {t(confirmedPumpOn ? `${pumpRuntimeSeconds || 0}s (Active)` : "0s (Standby)")}
           </strong>
         </div>
 
         <div>
-          <span className="block" style={{ color: "var(--text-muted)" }}>State Authority</span>
+          <span className="block" style={{ color: "var(--text-muted)" }}>{t("State Authority")}</span>
           <strong
             className="font-serif text-sm mt-0.5 block"
             style={{ color: confirmedPumpOn ? "var(--terracotta-600)" : "var(--forest-700)" }}
-          >
-            Firmware Verified
-          </strong>
+          >{t("Firmware Verified")}</strong>
         </div>
       </div>
 
@@ -239,15 +234,15 @@ export default function PumpControlWidget({
       >
         <span className="flex items-center gap-1.5">
           <Clock size={13} style={{ color: "var(--gold-600)" }} />
-          <span>Watchdog: <strong>15s limit</strong></span>
+          <span>{t("Watchdog:")}{" "}<strong>{t("15s limit")}</strong></span>
         </span>
         <span className="flex items-center gap-1.5">
           <Clock size={13} style={{ color: "var(--dew-600)" }} />
-          <span>Cooldown: <strong>60s safety lockout</strong></span>
+          <span>{t("Cooldown:")}{" "}<strong>{t("60s safety lockout")}</strong></span>
         </span>
         <span className="flex items-center gap-1.5">
           <CheckCircle2 size={13} style={{ color: "var(--forest-600)" }} />
-          <span>Default: <strong>Safe Boot OFF</strong></span>
+          <span>{t("Default:")}{" "}<strong>{t("Safe Boot OFF")}</strong></span>
         </span>
       </div>
     </div>

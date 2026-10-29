@@ -1,5 +1,6 @@
 "use client";
 
+import { useLanguage } from "@/components/LanguageProvider";
 import React from "react";
 import { Wifi, WifiOff, Radio, Clock } from "lucide-react";
 import { PlantDeviceStatus } from "@/types/plant-monitor";
@@ -11,6 +12,8 @@ interface Props {
 }
 
 export default function DeviceStatusBadge({ status, sseConnected, lastEventTime }: Props) {
+  const { t, intlLocale } = useLanguage();
+
   const isOnline = status?.online ?? false;
   const secondsAgo = status?.seconds_since_last_seen;
 
@@ -32,12 +35,12 @@ export default function DeviceStatusBadge({ status, sseConnected, lastEventTime 
         {isOnline ? (
           <>
             <Wifi size={13} className="text-forest-700" />
-            <span>ESP8266 Online</span>
+            <span>{t("ESP8266 Online")}</span>
           </>
         ) : (
           <>
             <WifiOff size={13} className="text-terracotta-600" />
-            <span>ESP8266 Offline</span>
+            <span>{t("ESP8266 Offline")}</span>
           </>
         )}
       </div>
@@ -49,11 +52,11 @@ export default function DeviceStatusBadge({ status, sseConnected, lastEventTime 
         aria-label={`Live telemetry stream is ${sseConnected ? "active" : "reconnecting"}`}
       >
         <Radio size={13} className={sseConnected ? "animate-pulse" : ""} />
-        <span>Live SSE:</span>
-        <strong className="font-semibold">{sseConnected ? "Connected" : "Syncing..."}</strong>
+        <span>{t("Live SSE:")}</span>
+        <strong className="font-semibold">{t(sseConnected ? "Connected" : "Syncing...")}</strong>
         {lastEventTime && (
           <span className="mono-tag opacity-75 ml-1">
-            {lastEventTime.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", second: "2-digit" })}
+            {t(lastEventTime.toLocaleTimeString(intlLocale, { hour: "2-digit", minute: "2-digit", second: "2-digit" }))}
           </span>
         )}
       </div>
@@ -62,9 +65,9 @@ export default function DeviceStatusBadge({ status, sseConnected, lastEventTime 
       {secondsAgo != null && (
         <span className="text-xs flex items-center gap-1.5" style={{ color: "var(--text-muted)" }}>
           <Clock size={12} />
-          <span>Last packet:</span>
+          <span>{t("Last packet:")}</span>
           <strong className="font-medium" style={{ color: "var(--text-secondary)" }}>
-            {secondsAgo < 5 ? "just now" : `${secondsAgo.toFixed(0)}s ago`}
+            {t(secondsAgo < 5 ? "just now" : `${secondsAgo.toFixed(0)}s ago`)}
           </strong>
         </span>
       )}
