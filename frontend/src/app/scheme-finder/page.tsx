@@ -3,12 +3,12 @@
 import { useLanguage } from "@/components/LanguageProvider";
 import React, { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { 
-  Search, 
-  ArrowLeft, 
-  Landmark, 
-  TrendingUp, 
-  Users, 
+import {
+  Search,
+  ArrowLeft,
+  Landmark,
+  TrendingUp,
+  Users,
   Calendar,
   ExternalLink,
 } from "lucide-react";
@@ -22,7 +22,7 @@ const schemes = [
     benefit: "₹6,000 per year in three installments",
     eligibility: "All landholding farmer families",
     tags: ["Central", "Direct Benefit"],
-    desc: "A central sector scheme providing income support to all landholding farmers' families in the country to supplement their financial needs."
+    desc: "A central sector scheme providing income support to all landholding farmers' families in the country to supplement their financial needs.",
   },
   {
     id: 2,
@@ -31,7 +31,7 @@ const schemes = [
     benefit: "Financial support to farmers suffering crop loss/damage",
     eligibility: "All farmers including sharecroppers and tenant farmers",
     tags: ["Insurance", "Risk Management"],
-    desc: "Yield-based crop insurance scheme that provides financial support to farmers for crop failure due to natural calamities, pests & diseases."
+    desc: "Yield-based crop insurance scheme that provides financial support to farmers for crop failure due to natural calamities, pests & diseases.",
   },
   {
     id: 3,
@@ -40,7 +40,7 @@ const schemes = [
     benefit: "Testing soil and providing nutrition recommendations",
     eligibility: "All farmers with land holdings",
     tags: ["Testing", "Fertility"],
-    desc: "Promotes soil test based and balanced use of fertilizers to enable farmers to realize higher yields at lower cost."
+    desc: "Promotes soil test based and balanced use of fertilizers to enable farmers to realize higher yields at lower cost.",
   },
   {
     id: 4,
@@ -49,8 +49,8 @@ const schemes = [
     benefit: "Monthly pension of ₹3,000",
     eligibility: "Small and marginal farmers aged 18-40 years",
     tags: ["Old Age", "Security"],
-    desc: "A voluntary and contributory pension scheme for small and marginal farmers to provide social security in their old age."
-  }
+    desc: "A voluntary and contributory pension scheme for small and marginal farmers to provide social security in their old age.",
+  },
 ];
 
 export default function SchemeFinder() {
@@ -59,12 +59,21 @@ export default function SchemeFinder() {
   const [search, setSearch] = useState("");
   const [activeCategory, setActiveCategory] = useState("All");
 
-  const categories = ["All", "Income Support", "Insurance", "Soil Health", "Pension"];
+  const categories = [
+    "All",
+    "Income Support",
+    "Insurance",
+    "Soil Health",
+    "Pension",
+  ];
 
-  const filtered = schemes.filter(s => {
+  const filtered = schemes.filter((s) => {
     const query = search.trim().toLocaleLowerCase();
-    const matchesSearch = [s.title, s.desc, t(s.title), t(s.desc)].some((text) => text.toLocaleLowerCase().includes(query));
-    const matchesCat = activeCategory === "All" || s.category === activeCategory;
+    const matchesSearch = [s.title, s.desc, t(s.title), t(s.desc)].some(
+      (text) => text.toLocaleLowerCase().includes(query),
+    );
+    const matchesCat =
+      activeCategory === "All" || s.category === activeCategory;
     return matchesSearch && matchesCat;
   });
 
@@ -73,52 +82,67 @@ export default function SchemeFinder() {
       <header className="sticky top-0 z-50 mx-auto max-w-7xl rounded-b-3xl bg-white/70 px-6 py-4 shadow-sm backdrop-blur-xl">
         <div className="flex items-center gap-4">
           <Link href="/">
-            <motion.div whileHover={{ scale: 1.1 }} className="cursor-pointer rounded-xl bg-surface-container-low p-2.5 transition-colors hover:bg-surface-container">
+            <motion.div
+              whileHover={{ scale: 1.1 }}
+              className="cursor-pointer rounded-xl bg-surface-container-low p-2.5 transition-colors hover:bg-surface-container"
+            >
               <ArrowLeft className="h-5 w-5 text-primary" />
             </motion.div>
           </Link>
           <div>
-            <h1 className="font-display text-xl font-bold tracking-tight text-on-surface uppercase">KrishiNidhi</h1>
-            <p className="text-[10px] font-bold text-primary tracking-widest uppercase">{t("Benefit Directory")}</p>
+            <h1 className="font-display text-xl font-bold tracking-tight text-on-surface uppercase">
+              KrishiNidhi
+            </h1>
+            <p className="text-[10px] font-bold text-primary tracking-widest uppercase">
+              {t("Benefit Directory")}
+            </p>
           </div>
         </div>
       </header>
 
       <main className="max-w-5xl mx-auto p-6 space-y-12 py-12">
-        <motion.div 
+        <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           className="text-center space-y-4"
         >
           <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-primary-container/10">
             <Landmark className="h-4 w-4 text-primary" />
-            <span className="text-[10px] font-bold text-primary tracking-widest uppercase">{t("Official Governance Portal")}</span>
+            <span className="text-[10px] font-bold text-primary tracking-widest uppercase">
+              {t("Official Governance Portal")}
+            </span>
           </div>
-          <h2 className="font-display text-5xl font-black tracking-tight text-on-surface">{t("SCHEME FINDER")}</h2>
-          <p className="text-slate-500 text-base max-w-lg mx-auto">{t("Discover agricultural subsidies and support programs tailored to your field telemetry and regional classification.")}</p>
+          <h2 className="font-display text-5xl font-black tracking-tight text-on-surface">
+            {t("SCHEME FINDER")}
+          </h2>
+          <p className="text-slate-500 text-base max-w-lg mx-auto">
+            {t(
+              "Discover agricultural subsidies and support programs tailored to your field telemetry and regional classification.",
+            )}
+          </p>
         </motion.div>
 
         <div className="flex flex-col md:flex-row gap-4">
           <div className="relative flex-1">
             <Search className="absolute left-5 top-1/2 -translate-y-1/2 h-5 w-5 text-slate-400" />
-            <input 
-              type="text" 
-              placeholder={t("Search by name or keyword...")} 
+            <input
+              type="text"
+              placeholder={t("Search by name or keyword...")}
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               className="w-full bg-white rounded-2xl pl-14 pr-6 py-4 text-on-surface ambient-shadow focus:outline-none focus:ring-2 focus:ring-primary-container transition-all"
             />
           </div>
-          
+
           <div className="flex gap-2 overflow-x-auto pb-2 no-scrollbar">
-            {categories.map(cat => (
-              <button 
+            {categories.map((cat) => (
+              <button
                 key={cat}
                 onClick={() => setActiveCategory(cat)}
                 className={`px-6 py-4 rounded-2xl text-[10px] font-bold tracking-widest uppercase transition-all whitespace-nowrap ambient-shadow ${
-                  activeCategory === cat 
-                  ? "bg-primary text-white glow-primary" 
-                  : "bg-white text-slate-500 hover:text-primary"
+                  activeCategory === cat
+                    ? "bg-primary text-white glow-primary"
+                    : "bg-white text-slate-500 hover:text-primary"
                 }`}
               >
                 {t(cat)}
@@ -144,8 +168,13 @@ export default function SchemeFinder() {
                     <TrendingUp className="h-6 w-6 text-primary" />
                   </div>
                   <div className="flex gap-2">
-                    {s.tags.map(tag => (
-                      <span key={tag} className="text-[8px] font-bold tracking-widest text-slate-400 uppercase border border-slate-100 px-3 py-1 rounded-full">{t(tag)}</span>
+                    {s.tags.map((tag) => (
+                      <span
+                        key={tag}
+                        className="text-[8px] font-bold tracking-widest text-slate-400 uppercase border border-slate-100 px-3 py-1 rounded-full"
+                      >
+                        {t(tag)}
+                      </span>
                     ))}
                   </div>
                 </div>
@@ -163,8 +192,12 @@ export default function SchemeFinder() {
                       <Users className="h-4 w-4 text-secondary" />
                     </div>
                     <div>
-                      <p className="text-[8px] font-bold text-slate-400 uppercase tracking-widest">{t("Eligibility")}</p>
-                      <p className="text-xs font-bold text-on-surface">{t(s.eligibility)}</p>
+                      <p className="text-[8px] font-bold text-slate-400 uppercase tracking-widest">
+                        {t("Eligibility")}
+                      </p>
+                      <p className="text-xs font-bold text-on-surface">
+                        {t(s.eligibility)}
+                      </p>
                     </div>
                   </div>
                   <div className="flex items-center gap-3">
@@ -172,13 +205,19 @@ export default function SchemeFinder() {
                       <Calendar className="h-4 w-4 text-primary" />
                     </div>
                     <div>
-                      <p className="text-[8px] font-bold text-slate-400 uppercase tracking-widest">{t("Benefit Amount")}</p>
-                      <p className="text-xs font-bold text-primary">{t(s.benefit)}</p>
+                      <p className="text-[8px] font-bold text-slate-400 uppercase tracking-widest">
+                        {t("Benefit Amount")}
+                      </p>
+                      <p className="text-xs font-bold text-primary">
+                        {t(s.benefit)}
+                      </p>
                     </div>
                   </div>
                 </div>
 
-                <button className="w-full py-4 bg-primary text-white rounded-2xl text-[10px] font-bold tracking-[0.2em] uppercase glow-primary hover:brightness-110 transition-all flex items-center justify-center gap-2">{t("Access Portal")}<ExternalLink className="h-3 w-3" />
+                <button className="w-full py-4 bg-primary text-white rounded-2xl text-[10px] font-bold tracking-[0.2em] uppercase glow-primary hover:brightness-110 transition-all flex items-center justify-center gap-2">
+                  {t("Access Portal")}
+                  <ExternalLink className="h-3 w-3" />
                 </button>
               </motion.div>
             ))}
@@ -186,10 +225,14 @@ export default function SchemeFinder() {
         </div>
       </main>
 
-      <style dangerouslySetInnerHTML={{ __html: `
+      <style
+        dangerouslySetInnerHTML={{
+          __html: `
         .no-scrollbar::-webkit-scrollbar { display: none; }
         .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
-      `}} />
+      `,
+        }}
+      />
     </div>
   );
 }

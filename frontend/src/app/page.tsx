@@ -40,7 +40,6 @@ export default function HomePage() {
   return (
     <main className="section" style={{ backgroundColor: "var(--bg-canvas)" }}>
       <div className="page-shell flex flex-col gap-10">
-        
         {/* Editorial Botanical Hero Card */}
         <section className="botanical-card p-8 md:p-14 bg-white flex flex-col gap-6">
           <div className="flex items-center gap-2 flex-wrap">
@@ -55,8 +54,17 @@ export default function HomePage() {
           </div>
 
           <div className="max-w-3xl">
-            <h1 className="title-xl mb-4">{t("Mindful Plant Telemetry & Fail-Safe Automated Irrigation.")}</h1>
-            <p className="text-base md:text-lg leading-relaxed" style={{ color: "var(--text-secondary)" }}>{t("A quieter, higher-fidelity workspace to monitor your plant's microclimate, observe soil hydration dynamics, and issue authoritative irrigation commands backed by hardware fail-safes and agronomic intelligence.")}</p>
+            <h1 className="title-xl mb-4">
+              {t("Mindful Plant Telemetry & Fail-Safe Automated Irrigation.")}
+            </h1>
+            <p
+              className="text-base md:text-lg leading-relaxed"
+              style={{ color: "var(--text-secondary)" }}
+            >
+              {t(
+                "A quieter, higher-fidelity workspace to monitor your plant's microclimate, observe soil hydration dynamics, and issue authoritative irrigation commands backed by hardware fail-safes and agronomic intelligence.",
+              )}
+            </p>
           </div>
 
           <div className="flex items-center gap-3 flex-wrap pt-2">
@@ -70,28 +78,76 @@ export default function HomePage() {
             </Link>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-6 border-t mt-4" style={{ borderColor: "var(--border-subtle)" }}>
+          <div
+            className="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-6 border-t mt-4"
+            style={{ borderColor: "var(--border-subtle)" }}
+          >
             <div className="flex items-start gap-3">
-              <span className="w-2 h-2 rounded-full mt-2" style={{ backgroundColor: "var(--forest-600)" }} />
+              <span
+                className="w-2 h-2 rounded-full mt-2"
+                style={{ backgroundColor: "var(--forest-600)" }}
+              />
               <div>
-                <strong className="block text-sm font-serif" style={{ color: "var(--forest-900)" }}>{t("Hardware-Authoritative")}</strong>
-                <span className="text-xs" style={{ color: "var(--text-muted)" }}>{t("Firmware acknowledgments represent true relay coil status.")}</span>
+                <strong
+                  className="block text-sm font-serif"
+                  style={{ color: "var(--forest-900)" }}
+                >
+                  {t("Hardware-Authoritative")}
+                </strong>
+                <span
+                  className="text-xs"
+                  style={{ color: "var(--text-muted)" }}
+                >
+                  {t(
+                    "Firmware acknowledgments represent true relay coil status.",
+                  )}
+                </span>
               </div>
             </div>
 
             <div className="flex items-start gap-3">
-              <span className="w-2 h-2 rounded-full mt-2" style={{ backgroundColor: "var(--terracotta-600)" }} />
+              <span
+                className="w-2 h-2 rounded-full mt-2"
+                style={{ backgroundColor: "var(--terracotta-600)" }}
+              />
               <div>
-                <strong className="block text-sm font-serif" style={{ color: "var(--forest-900)" }}>{t("Watchdog Protection")}</strong>
-                <span className="text-xs" style={{ color: "var(--text-muted)" }}>{t("15s runtime cutoff and 60s cooldown prevent water damage.")}</span>
+                <strong
+                  className="block text-sm font-serif"
+                  style={{ color: "var(--forest-900)" }}
+                >
+                  {t("Watchdog Protection")}
+                </strong>
+                <span
+                  className="text-xs"
+                  style={{ color: "var(--text-muted)" }}
+                >
+                  {t(
+                    "15s runtime cutoff and 60s cooldown prevent water damage.",
+                  )}
+                </span>
               </div>
             </div>
 
             <div className="flex items-start gap-3">
-              <span className="w-2 h-2 rounded-full mt-2" style={{ backgroundColor: "var(--dew-600)" }} />
+              <span
+                className="w-2 h-2 rounded-full mt-2"
+                style={{ backgroundColor: "var(--dew-600)" }}
+              />
               <div>
-                <strong className="block text-sm font-serif" style={{ color: "var(--forest-900)" }}>{t("Live Telemetry Broadcast")}</strong>
-                <span className="text-xs" style={{ color: "var(--text-muted)" }}>{t("Sub-second SSE updates with graceful polling resilience.")}</span>
+                <strong
+                  className="block text-sm font-serif"
+                  style={{ color: "var(--forest-900)" }}
+                >
+                  {t("Live Telemetry Broadcast")}
+                </strong>
+                <span
+                  className="text-xs"
+                  style={{ color: "var(--text-muted)" }}
+                >
+                  {t(
+                    "Sub-second SSE updates with graceful polling resilience.",
+                  )}
+                </span>
               </div>
             </div>
           </div>
@@ -108,10 +164,15 @@ export default function HomePage() {
               >
                 <div>
                   <div className="flex justify-between items-center mb-4">
-                    <span className="pill-forest text-[11px]">{t(item.badge)}</span>
+                    <span className="pill-forest text-[11px]">
+                      {t(item.badge)}
+                    </span>
                     <div
                       className="p-2 rounded-xl"
-                      style={{ backgroundColor: "var(--forest-50)", color: "var(--forest-800)" }}
+                      style={{
+                        backgroundColor: "var(--forest-50)",
+                        color: "var(--forest-800)",
+                      }}
                     >
                       <Icon size={18} />
                     </div>
@@ -120,15 +181,25 @@ export default function HomePage() {
                   <h3 className="title-md font-serif text-lg mb-2">
                     {t(item.title)}
                   </h3>
-                  <p className="text-xs leading-relaxed" style={{ color: "var(--text-secondary)" }}>
+                  <p
+                    className="text-xs leading-relaxed"
+                    style={{ color: "var(--text-secondary)" }}
+                  >
                     {t(item.desc)}
                   </p>
                 </div>
 
-                <div className="pt-6 mt-4 border-t" style={{ borderColor: "var(--border-subtle)" }}>
+                <div
+                  className="pt-6 mt-4 border-t"
+                  style={{ borderColor: "var(--border-subtle)" }}
+                >
                   <Link
                     href={item.href}
-                    className={item.primary ? "btn-primary w-full text-xs py-2.5" : "btn-secondary w-full text-xs py-2.5"}
+                    className={
+                      item.primary
+                        ? "btn-primary w-full text-xs py-2.5"
+                        : "btn-secondary w-full text-xs py-2.5"
+                    }
                   >
                     <span>{t(item.cta)}</span>
                     <ArrowRight size={14} />
@@ -140,11 +211,27 @@ export default function HomePage() {
         </section>
 
         {/* Editorial Footer */}
-        <footer className="text-center text-xs py-8 border-t" style={{ borderColor: "var(--border-subtle)", color: "var(--text-muted)" }}>
-          <p className="font-serif italic text-sm mb-1" style={{ color: "var(--text-secondary)" }}>{t("KrishiNidhi Botanical Systems • Department of Computer Science & Engineering")}</p>
-          <p className="mono-tag text-[11px]">{t("NodeMCU ESP8266 ESP-12E Architecture • Next.js 16 • Warm Editorial Botanical Edition")}</p>
+        <footer
+          className="text-center text-xs py-8 border-t"
+          style={{
+            borderColor: "var(--border-subtle)",
+            color: "var(--text-muted)",
+          }}
+        >
+          <p
+            className="font-serif italic text-sm mb-1"
+            style={{ color: "var(--text-secondary)" }}
+          >
+            {t(
+              "KrishiNidhi Botanical Systems • Department of Computer Science & Engineering",
+            )}
+          </p>
+          <p className="mono-tag text-[11px]">
+            {t(
+              "NodeMCU ESP8266 ESP-12E Architecture • Next.js 16 • Warm Editorial Botanical Edition",
+            )}
+          </p>
         </footer>
-
       </div>
     </main>
   );

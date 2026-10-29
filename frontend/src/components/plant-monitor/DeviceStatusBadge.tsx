@@ -11,7 +11,11 @@ interface Props {
   lastEventTime: Date | null;
 }
 
-export default function DeviceStatusBadge({ status, sseConnected, lastEventTime }: Props) {
+export default function DeviceStatusBadge({
+  status,
+  sseConnected,
+  lastEventTime,
+}: Props) {
   const { t, intlLocale } = useLanguage();
 
   const isOnline = status?.online ?? false;
@@ -23,12 +27,16 @@ export default function DeviceStatusBadge({ status, sseConnected, lastEventTime 
       <div
         className={isOnline ? "pill-forest" : "pill-terracotta"}
         role="status"
-        aria-label={`ESP8266 hardware is ${isOnline ? "connected" : "offline"}`}
+        aria-label={t(
+          `ESP8266 hardware is ${isOnline ? "connected" : "offline"}`,
+        )}
       >
         <span
           className="w-2 h-2 rounded-full inline-block"
           style={{
-            backgroundColor: isOnline ? "var(--forest-600)" : "var(--terracotta-600)",
+            backgroundColor: isOnline
+              ? "var(--forest-600)"
+              : "var(--terracotta-600)",
             boxShadow: isOnline ? "0 0 6px rgba(49, 92, 69, 0.4)" : "none",
           }}
         />
@@ -49,24 +57,40 @@ export default function DeviceStatusBadge({ status, sseConnected, lastEventTime 
       <div
         className="pill-dew"
         role="status"
-        aria-label={`Live telemetry stream is ${sseConnected ? "active" : "reconnecting"}`}
+        aria-label={t(
+          `Live telemetry stream is ${sseConnected ? "active" : "reconnecting"}`,
+        )}
       >
         <Radio size={13} className={sseConnected ? "animate-pulse" : ""} />
         <span>{t("Live SSE:")}</span>
-        <strong className="font-semibold">{t(sseConnected ? "Connected" : "Syncing...")}</strong>
+        <strong className="font-semibold">
+          {t(sseConnected ? "Connected" : "Syncing...")}
+        </strong>
         {lastEventTime && (
           <span className="mono-tag opacity-75 ml-1">
-            {t(lastEventTime.toLocaleTimeString(intlLocale, { hour: "2-digit", minute: "2-digit", second: "2-digit" }))}
+            {t(
+              lastEventTime.toLocaleTimeString(intlLocale, {
+                hour: "2-digit",
+                minute: "2-digit",
+                second: "2-digit",
+              }),
+            )}
           </span>
         )}
       </div>
 
       {/* Last Ping Age */}
       {secondsAgo != null && (
-        <span className="text-xs flex items-center gap-1.5" style={{ color: "var(--text-muted)" }}>
+        <span
+          className="text-xs flex items-center gap-1.5"
+          style={{ color: "var(--text-muted)" }}
+        >
           <Clock size={12} />
           <span>{t("Last packet:")}</span>
-          <strong className="font-medium" style={{ color: "var(--text-secondary)" }}>
+          <strong
+            className="font-medium"
+            style={{ color: "var(--text-secondary)" }}
+          >
             {t(secondsAgo < 5 ? "just now" : `${secondsAgo.toFixed(0)}s ago`)}
           </strong>
         </span>

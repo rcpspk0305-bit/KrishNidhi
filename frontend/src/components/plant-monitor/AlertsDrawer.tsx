@@ -38,11 +38,19 @@ export default function AlertsDrawer({ alerts, onAlertAcknowledged }: Props) {
       }}
     >
       <div className="flex items-center justify-between mb-3">
-        <div className="flex items-center gap-2 font-semibold text-sm" style={{ color: "var(--terracotta-700)" }}>
+        <div
+          className="flex items-center gap-2 font-semibold text-sm"
+          style={{ color: "var(--terracotta-700)" }}
+        >
           <BellRing size={16} />
-          <span>{t("Active Agronomic & Hardware Alerts (")}{unacknowledged.length})</span>
+          <span>
+            {t("Active Agronomic & Hardware Alerts (")}
+            {unacknowledged.length})
+          </span>
         </div>
-        <span className="mono-tag" style={{ color: "var(--terracotta-600)" }}>{t("Requires Attention")}</span>
+        <span className="mono-tag" style={{ color: "var(--terracotta-600)" }}>
+          {t("Requires Attention")}
+        </span>
       </div>
 
       <div className="flex flex-col gap-2.5">
@@ -56,16 +64,34 @@ export default function AlertsDrawer({ alerts, onAlertAcknowledged }: Props) {
               <AlertCircle
                 size={16}
                 className="mt-0.5 shrink-0"
-                style={{ color: alert.severity === "high" ? "var(--terracotta-600)" : "var(--gold-600)" }}
+                style={{
+                  color:
+                    alert.severity === "high"
+                      ? "var(--terracotta-600)"
+                      : "var(--gold-600)",
+                }}
               />
               <div>
-                <p className="text-sm font-medium" style={{ color: "var(--text-primary)" }}>
-                  {alert.message}
+                <p
+                  className="text-sm font-medium"
+                  style={{ color: "var(--text-primary)" }}
+                >
+                  {t(alert.message)}
                 </p>
-                <p className="text-xs mt-0.5" style={{ color: "var(--text-muted)" }}>
-                  {t(new Date(alert.timestamp).toLocaleTimeString(intlLocale, { hour: "2-digit", minute: "2-digit" }))} &bull;{" "}
+                <p
+                  className="text-xs mt-0.5"
+                  style={{ color: "var(--text-muted)" }}
+                >
+                  {t(
+                    new Date(alert.timestamp).toLocaleTimeString(intlLocale, {
+                      hour: "2-digit",
+                      minute: "2-digit",
+                    }),
+                  )}{" "}
+                  &bull;{" "}
                   <span className="uppercase font-semibold tracking-wider text-[10px]">
-                    {alert.severity}{t("priority")}</span>
+                    {t(alert.severity)} {t("priority")}
+                  </span>
                 </p>
               </div>
             </div>

@@ -21,18 +21,31 @@ interface Props {
   loading?: boolean;
 }
 
-export default function TelemetryTrendsChart({ data, onRefresh, loading }: Props) {
+export default function TelemetryTrendsChart({
+  data,
+  onRefresh,
+  loading,
+}: Props) {
   const { t, intlLocale } = useLanguage();
 
-  const [selectedMetric, setSelectedMetric] = useState<"all" | "soil" | "temp" | "humidity" | "pump">("all");
+  const [selectedMetric, setSelectedMetric] = useState<
+    "all" | "soil" | "temp" | "humidity" | "pump"
+  >("all");
 
   const formattedData = data.map((d) => {
-    const timeStr = d.timestamp ? new Date(d.timestamp).toLocaleTimeString(intlLocale, { hour: "2-digit", minute: "2-digit" }) : "";
+    const timeStr = d.timestamp
+      ? new Date(d.timestamp).toLocaleTimeString(intlLocale, {
+          hour: "2-digit",
+          minute: "2-digit",
+        })
+      : "";
     return {
       time: timeStr,
-      temperature: d.temperature != null ? Number(d.temperature.toFixed(1)) : null,
+      temperature:
+        d.temperature != null ? Number(d.temperature.toFixed(1)) : null,
       humidity: d.humidity != null ? Number(d.humidity.toFixed(0)) : null,
-      soil_moisture: d.soil_moisture != null ? Number(d.soil_moisture.toFixed(0)) : null,
+      soil_moisture:
+        d.soil_moisture != null ? Number(d.soil_moisture.toFixed(0)) : null,
       pump_active: d.pump_on ? 100 : 0,
     };
   });
@@ -53,8 +66,15 @@ export default function TelemetryTrendsChart({ data, onRefresh, loading }: Props
             <TrendingUp size={20} />
           </div>
           <div>
-            <h3 className="title-md font-serif text-lg">{t("Environmental Telemetry Trends")}</h3>
-            <span className="mono-tag block" style={{ color: "var(--text-muted)" }}>{t("Chronological Microclimate Log from NodeMCU")}</span>
+            <h3 className="title-md font-serif text-lg">
+              {t("Environmental Telemetry Trends")}
+            </h3>
+            <span
+              className="mono-tag block"
+              style={{ color: "var(--text-muted)" }}
+            >
+              {t("Chronological Microclimate Log from NodeMCU")}
+            </span>
           </div>
         </div>
 
@@ -62,28 +82,45 @@ export default function TelemetryTrendsChart({ data, onRefresh, loading }: Props
           {/* Metric Filter Tabs */}
           <div
             className="flex p-1 rounded-xl border"
-            style={{ backgroundColor: "var(--bg-subtle)", borderColor: "var(--border-subtle)" }}
+            style={{
+              backgroundColor: "var(--bg-subtle)",
+              borderColor: "var(--border-subtle)",
+            }}
           >
-            {(["all", "soil", "temp", "humidity", "pump"] as const).map((filter) => {
-              const isSelected = selectedMetric === filter;
-              return (
-                <button
-                  key={filter}
-                  type="button"
-                  onClick={() => setSelectedMetric(filter)}
-                  className="py-1 px-2.5 text-xs font-semibold rounded-lg transition-all uppercase"
-                  style={{
-                    backgroundColor: isSelected ? "#ffffff" : "transparent",
-                    color: isSelected ? "var(--forest-800)" : "var(--text-muted)",
-                    boxShadow: isSelected ? "var(--shadow-sm)" : "none",
-                    border: isSelected ? "1px solid var(--border-default)" : "1px solid transparent",
-                    cursor: "pointer",
-                  }}
-                >
-                  {t(({ all: "All", soil: "Soil", temp: "Temperature", humidity: "Humidity", pump: "Pump" })[filter])}
-                </button>
-              );
-            })}
+            {(["all", "soil", "temp", "humidity", "pump"] as const).map(
+              (filter) => {
+                const isSelected = selectedMetric === filter;
+                return (
+                  <button
+                    key={filter}
+                    type="button"
+                    onClick={() => setSelectedMetric(filter)}
+                    className="py-1 px-2.5 text-xs font-semibold rounded-lg transition-all uppercase"
+                    style={{
+                      backgroundColor: isSelected ? "#ffffff" : "transparent",
+                      color: isSelected
+                        ? "var(--forest-800)"
+                        : "var(--text-muted)",
+                      boxShadow: isSelected ? "var(--shadow-sm)" : "none",
+                      border: isSelected
+                        ? "1px solid var(--border-default)"
+                        : "1px solid transparent",
+                      cursor: "pointer",
+                    }}
+                  >
+                    {t(
+                      {
+                        all: "All",
+                        soil: "Soil",
+                        temp: "Temperature",
+                        humidity: "Humidity",
+                        pump: "Pump",
+                      }[filter],
+                    )}
+                  </button>
+                );
+              },
+            )}
           </div>
 
           {onRefresh && (
@@ -109,12 +146,22 @@ export default function TelemetryTrendsChart({ data, onRefresh, loading }: Props
             borderColor: "var(--border-subtle)",
             color: "var(--text-muted)",
           }}
-        >{t("No historical telemetry points found. Telemetry will plot here once received from ESP8266.")}</div>
+        >
+          {t(
+            "No historical telemetry points found. Telemetry will plot here once received from ESP8266.",
+          )}
+        </div>
       ) : (
         <div className="w-full h-72">
           <ResponsiveContainer width="100%" height="100%">
-            <LineChart data={formattedData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
-              <CartesianGrid strokeDasharray="3 3" stroke="rgba(25, 42, 33, 0.08)" />
+            <LineChart
+              data={formattedData}
+              margin={{ top: 10, right: 10, left: -20, bottom: 0 }}
+            >
+              <CartesianGrid
+                strokeDasharray="3 3"
+                stroke="rgba(25, 42, 33, 0.08)"
+              />
               <XAxis
                 dataKey="time"
                 stroke="var(--text-muted)"

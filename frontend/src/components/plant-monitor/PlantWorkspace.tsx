@@ -27,14 +27,20 @@ interface Props {
   initialDeviceId?: string;
 }
 
-export default function PlantWorkspace({ initialDeviceId = "esp8266-plant-01" }: Props) {
+export default function PlantWorkspace({
+  initialDeviceId = "esp8266-plant-01",
+}: Props) {
   const { t, locale } = useLanguage();
 
   const [deviceId] = useState<string>(initialDeviceId);
   const [telemetry, setTelemetry] = useState<PlantTelemetry | null>(null);
   const [history, setHistory] = useState<PlantTelemetry[]>([]);
-  const [deviceStatus, setDeviceStatus] = useState<PlantDeviceStatus | null>(null);
-  const [recommendation, setRecommendation] = useState<PlantRecommendation | null>(null);
+  const [deviceStatus, setDeviceStatus] = useState<PlantDeviceStatus | null>(
+    null,
+  );
+  const [recommendation, setRecommendation] =
+    useState<PlantRecommendation | null>(null);
+  const [recommendationRevision, setRecommendationRevision] = useState(0);
   const [alerts, setAlerts] = useState<PlantAlert[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [syncing, setSyncing] = useState<boolean>(false);
@@ -44,7 +50,10 @@ export default function PlantWorkspace({ initialDeviceId = "esp8266-plant-01" }:
   useEffect(() => {
     const initial = setTimeout(() => setNow(Date.now()), 0);
     const timer = setInterval(() => setNow(Date.now()), 5000);
-    return () => { clearTimeout(initial); clearInterval(timer); };
+    return () => {
+      clearTimeout(initial);
+      clearInterval(timer);
+    };
   }, []);
 
   const dataIsFresh = useMemo(() => {
@@ -55,20 +64,19 @@ export default function PlantWorkspace({ initialDeviceId = "esp8266-plant-01" }:
   const refreshAllData = useCallback(async () => {
     setSyncing(true);
     try {
-      const [latestRes, historyRes, statusRes, recRes, alertsRes] = await Promise.allSettled([
-        plantApi.getLatestTelemetry(deviceId),
-        plantApi.getTelemetryHistory(deviceId, 24, 60),
-        plantApi.getDeviceStatus(deviceId),
-        plantApi.getRecommendations(deviceId, locale),
-        plantApi.getAlerts(deviceId),
-      ]);
+      const [latestRes, historyRes, statusRes, alertsRes] =
+        await Promise.allSettled([
+          plantApi.getLatestTelemetry(deviceId),
+          plantApi.getTelemetryHistory(deviceId, 24, 60),
+          plantApi.getDeviceStatus(deviceId),
+          plantApi.getAlerts(deviceId),
+        ]);
 
       if (latestRes.status === "fulfilled") setTelemetry(latestRes.value);
       if (historyRes.status === "fulfilled") {
         setHistory((prev) => mergeHistory(historyRes.value, prev));
       }
       if (statusRes.status === "fulfilled") setDeviceStatus(statusRes.value);
-      if (recRes.status === "fulfilled") setRecommendation(recRes.value);
       if (alertsRes.status === "fulfilled") setAlerts(alertsRes.value);
     } catch (err) {
       console.warn("Telemetry refresh notice:", err);
@@ -76,13 +84,40 @@ export default function PlantWorkspace({ initialDeviceId = "esp8266-plant-01" }:
       setLoading(false);
       setSyncing(false);
     }
-  }, [deviceId, locale]);
+  }, [deviceId]);
+
+  const refreshWorkspace = useCallback(async () => {
+    await refreshAllData();
+    setRecommendationRevision((revision) => revision + 1);
+  }, [refreshAllData]);
+
+  useEffect(() => {
+    let active = true;
+    const fetchRecommendations = async () => {
+      try {
+        const result = await plantApi.getRecommendations(deviceId, locale);
+        if (active) setRecommendation(result);
+      } catch {
+        /* Keep sensor polling independent of optional AI explanations. */
+      }
+    };
+    const initial = setTimeout(() => void fetchRecommendations(), 0);
+    const interval = setInterval(() => void fetchRecommendations(), 60_000);
+    return () => {
+      active = false;
+      clearTimeout(initial);
+      clearInterval(interval);
+    };
+  }, [deviceId, locale, recommendationRevision]);
 
   useEffect(() => {
     const initial = setTimeout(() => void refreshAllData(), 0);
     // Fallback polling every 15s in case SSE is interrupted
     const interval = setInterval(refreshAllData, 15000);
-    return () => { clearTimeout(initial); clearInterval(interval); };
+    return () => {
+      clearTimeout(initial);
+      clearInterval(interval);
+    };
   }, [refreshAllData]);
 
   // Connect to live Server-Sent Events (SSE)
@@ -101,7 +136,7 @@ export default function PlantWorkspace({ initialDeviceId = "esp8266-plant-01" }:
               last_seen: newTelemetry.timestamp,
               seconds_since_last_seen: 0,
             }
-          : null
+          : null,
       );
     },
     onPumpStateUpdated: (data) => {
@@ -110,10 +145,13 @@ export default function PlantWorkspace({ initialDeviceId = "esp8266-plant-01" }:
           ? {
               ...prev,
               pump_state: data.confirmed_state,
-              control_mode: data.control_mode as PlantDeviceStatus["control_mode"],
-              last_watering_time: data.confirmed_state ? (data.timestamp || new Date().toISOString()) : prev.last_watering_time,
+              control_mode:
+                data.control_mode as PlantDeviceStatus["control_mode"],
+              last_watering_time: data.confirmed_state
+                ? data.timestamp || new Date().toISOString()
+                : prev.last_watering_time,
             }
-          : null
+          : null,
       );
     },
     onCommandCreated: () => {
@@ -122,11 +160,16 @@ export default function PlantWorkspace({ initialDeviceId = "esp8266-plant-01" }:
   });
 
   return (
-    <main className="section bg-canvas text-forest-900 font-sans" style={{ backgroundColor: "var(--bg-canvas)" }}>
+    <main
+      className="section bg-canvas text-forest-900 font-sans"
+      style={{ backgroundColor: "var(--bg-canvas)" }}
+    >
       <div className="page-shell flex flex-col gap-6">
-        
         {/* Navigation & Status Header */}
-        <header className="flex justify-between items-center flex-wrap gap-4 pb-4 border-b" style={{ borderColor: "var(--border-subtle)" }}>
+        <header
+          className="flex justify-between items-center flex-wrap gap-4 pb-4 border-b"
+          style={{ borderColor: "var(--border-subtle)" }}
+        >
           <div className="flex items-center gap-3">
             <Link
               href="/"
@@ -138,8 +181,18 @@ export default function PlantWorkspace({ initialDeviceId = "esp8266-plant-01" }:
             </Link>
 
             <div>
-              <span className="mono-tag font-bold uppercase tracking-wider" style={{ color: "var(--forest-600)" }}>{t("KrishiNidhi Botanical Console")}</span>
-              <h2 className="title-md font-serif text-xl" style={{ color: "var(--forest-900)" }}>{t("Smart Plant & Irrigation Station")}</h2>
+              <span
+                className="mono-tag font-bold uppercase tracking-wider"
+                style={{ color: "var(--forest-600)" }}
+              >
+                {t("KrishiNidhi Botanical Console")}
+              </span>
+              <h2
+                className="title-md font-serif text-xl"
+                style={{ color: "var(--forest-900)" }}
+              >
+                {t("Smart Plant & Irrigation Station")}
+              </h2>
             </div>
           </div>
 
@@ -152,12 +205,17 @@ export default function PlantWorkspace({ initialDeviceId = "esp8266-plant-01" }:
 
             <button
               type="button"
-              onClick={refreshAllData}
+              onClick={refreshWorkspace}
               disabled={syncing}
               className="btn-secondary text-xs py-2 px-3.5"
               aria-label={t("Synchronize plant data")}
             >
-              <RefreshCw size={13} className={syncing ? "animate-spin text-forest-700" : "text-forest-700"} />
+              <RefreshCw
+                size={13}
+                className={
+                  syncing ? "animate-spin text-forest-700" : "text-forest-700"
+                }
+              />
               <span>{t(syncing ? "Syncing..." : "Sync")}</span>
             </button>
 
@@ -183,18 +241,24 @@ export default function PlantWorkspace({ initialDeviceId = "esp8266-plant-01" }:
           >
             <div className="flex items-center gap-2 font-medium">
               <Clock size={15} />
-              <span>{t("Telemetry is currently stale (>35s without packet). Displaying last known sensor readings.")}</span>
+              <span>
+                {t(
+                  "Telemetry is currently stale (>35s without packet). Displaying last known sensor readings.",
+                )}
+              </span>
             </div>
             <button
               type="button"
-              onClick={refreshAllData}
+              onClick={refreshWorkspace}
               className="underline font-semibold ml-2"
-            >{t("Retry Sync")}</button>
+            >
+              {t("Retry Sync")}
+            </button>
           </div>
         )}
 
         {/* Active System Alerts Drawer */}
-        <AlertsDrawer alerts={alerts} onAlertAcknowledged={refreshAllData} />
+        <AlertsDrawer alerts={alerts} onAlertAcknowledged={refreshWorkspace} />
 
         {/* 1. HERO SECTION: Specimen Profile, Health Index, NodeMCU Link, Ribbon */}
         <PlantHealthHero
@@ -214,7 +278,7 @@ export default function PlantWorkspace({ initialDeviceId = "esp8266-plant-01" }:
             deviceId={deviceId}
             confirmedPumpOn={deviceStatus?.pump_state ?? false}
             currentMode={deviceStatus?.control_mode ?? "AUTO"}
-            onCommandDispatched={refreshAllData}
+            onCommandDispatched={refreshWorkspace}
             lastWateringTime={deviceStatus?.last_watering_time}
             pumpRuntimeSeconds={deviceStatus?.pump_runtime_seconds}
           />
@@ -229,7 +293,7 @@ export default function PlantWorkspace({ initialDeviceId = "esp8266-plant-01" }:
         {/* 4. HISTORICAL SENSOR TRENDS CHART */}
         <TelemetryTrendsChart
           data={history}
-          onRefresh={refreshAllData}
+          onRefresh={refreshWorkspace}
           loading={syncing}
         />
 
@@ -238,13 +302,30 @@ export default function PlantWorkspace({ initialDeviceId = "esp8266-plant-01" }:
           deviceId={deviceId}
           confirmedPumpOn={deviceStatus?.pump_state ?? false}
           currentMode={deviceStatus?.control_mode ?? "AUTO"}
-          onTelemetryEmitted={refreshAllData}
+          onTelemetryEmitted={refreshWorkspace}
         />
 
         {/* Footer */}
-        <footer className="text-center text-xs py-6 border-t mt-4" style={{ borderColor: "var(--border-subtle)", color: "var(--text-muted)" }}>
-          <p className="font-serif italic text-sm mb-1" style={{ color: "var(--text-secondary)" }}>{t("“KrishiNidhi — Mindful environmental stewardship and botanical vitality.”")}</p>
-          <p className="mono-tag text-[11px]">{t("ESP8266 NodeMCU ESP-12E Architecture • Computer Science & Engineering Final Project • Warm Editorial Botanical Edition")}</p>
+        <footer
+          className="text-center text-xs py-6 border-t mt-4"
+          style={{
+            borderColor: "var(--border-subtle)",
+            color: "var(--text-muted)",
+          }}
+        >
+          <p
+            className="font-serif italic text-sm mb-1"
+            style={{ color: "var(--text-secondary)" }}
+          >
+            {t(
+              "“KrishiNidhi — Mindful environmental stewardship and botanical vitality.”",
+            )}
+          </p>
+          <p className="mono-tag text-[11px]">
+            {t(
+              "ESP8266 NodeMCU ESP-12E Architecture • Computer Science & Engineering Final Project • Warm Editorial Botanical Edition",
+            )}
+          </p>
         </footer>
       </div>
     </main>

@@ -1,3 +1,36 @@
+@import "tailwindcss";
+
+@theme inline {
+  --color-forest-50: var(--forest-50);
+  --color-forest-100: var(--forest-100);
+  --color-forest-500: var(--forest-500);
+  --color-forest-600: var(--forest-600);
+  --color-forest-700: var(--forest-700);
+  --color-forest-800: var(--forest-800);
+  --color-forest-900: var(--forest-900);
+  --color-terracotta-50: var(--terracotta-50);
+  --color-terracotta-100: var(--terracotta-100);
+  --color-terracotta-500: var(--terracotta-500);
+  --color-terracotta-600: var(--terracotta-600);
+  --color-terracotta-700: var(--terracotta-700);
+  --color-dew-100: var(--dew-100);
+  --color-dew-500: var(--dew-500);
+  --color-dew-600: var(--dew-600);
+  --color-dew-700: var(--dew-700);
+  --color-gold-100: var(--gold-100);
+  --color-gold-500: var(--gold-500);
+  --color-gold-600: var(--gold-600);
+  --color-gold-700: var(--gold-700);
+  --color-canvas: var(--bg-canvas);
+  --color-surface: var(--bg-canvas);
+  --color-on-surface: var(--text-primary);
+  --color-surface-container: var(--surface-container);
+  --color-surface-container-low: var(--surface-container-low);
+  --color-primary: var(--primary);
+  --color-primary-container: var(--primary-container);
+  --color-secondary: var(--secondary);
+}
+
 :root {
   /* Warm Editorial Botanical Tokens */
   --bg-canvas: #fbf9f5;
@@ -5,7 +38,7 @@
   --surface-card: #ffffff;
   --surface-elevated: #ffffff;
   --surface-inset: #f5f2ea;
-  
+
   /* Text & Contrast Tokens */
   --text-primary: #192a21;
   --text-secondary: #4a5c52;
@@ -48,12 +81,18 @@
 
   /* Shadows */
   --shadow-sm: 0 1px 2px rgba(25, 42, 33, 0.04);
-  --shadow-card: 0 4px 20px -2px rgba(25, 42, 33, 0.05), 0 2px 6px -1px rgba(25, 42, 33, 0.02);
-  --shadow-elevated: 0 12px 32px -4px rgba(25, 42, 33, 0.08), 0 4px 12px -2px rgba(25, 42, 33, 0.03);
+  --shadow-card:
+    0 4px 20px -2px rgba(25, 42, 33, 0.05),
+    0 2px 6px -1px rgba(25, 42, 33, 0.02);
+  --shadow-elevated:
+    0 12px 32px -4px rgba(25, 42, 33, 0.08),
+    0 4px 12px -2px rgba(25, 42, 33, 0.03);
 
   /* Typography */
   --font-serif: "Newsreader", "Charter", "Georgia", "Cambria", serif;
-  --font-sans: var(--font-geist-sans), -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  --font-sans:
+    var(--font-geist-sans), -apple-system, BlinkMacSystemFont, "Segoe UI",
+    Roboto, sans-serif;
   --font-mono: var(--font-geist-mono), monospace;
 
   /* Radii */
@@ -81,10 +120,12 @@
   --secondary: #31778c;
 }
 
-* {
-  box-sizing: border-box;
-  margin: 0;
-  padding: 0;
+@layer base {
+  * {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+  }
 }
 
 body {
@@ -96,15 +137,23 @@ body {
   -moz-osx-font-smoothing: grayscale;
 }
 
-html:lang(te) body, html:lang(hi) body {
-  font-family: "Nirmala UI", "Noto Sans Telugu", "Noto Sans Devanagari", "Segoe UI", sans-serif;
+html:lang(te) body,
+html:lang(hi) body {
+  font-family:
+    "Nirmala UI", "Noto Sans Telugu", "Noto Sans Devanagari", "Segoe UI",
+    sans-serif;
 }
-html:lang(te) :is(h1,h2,h3,h4,.font-serif,.mono-tag), html:lang(hi) :is(h1,h2,h3,h4,.font-serif,.mono-tag) {
+html:lang(te) :is(h1, h2, h3, h4, .font-serif, .mono-tag),
+html:lang(hi) :is(h1, h2, h3, h4, .font-serif, .mono-tag) {
   font-family: inherit;
   letter-spacing: normal;
   line-height: 1.7;
 }
-html:lang(te) .truncate, html:lang(hi) .truncate { white-space:normal; overflow-wrap:anywhere; }
+html:lang(te) .truncate,
+html:lang(hi) .truncate {
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
 
 /* Botanical Card Styles */
 .botanical-card {
@@ -112,7 +161,10 @@ html:lang(te) .truncate, html:lang(hi) .truncate { white-space:normal; overflow-
   border: 1px solid var(--border-subtle);
   border-radius: var(--radius-lg);
   box-shadow: var(--shadow-card);
-  transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+  transition:
+    transform 0.2s ease,
+    box-shadow 0.2s ease,
+    border-color 0.2s ease;
 }
 
 .botanical-card:hover {
@@ -286,39 +338,41 @@ html:lang(te) .truncate, html:lang(hi) .truncate { white-space:normal; overflow-
 }
 
 /* Headings */
-.title-xl { 
+.title-xl {
   font-family: var(--font-serif);
-  font-size: 52px; 
-  font-weight: 700; 
-  letter-spacing: -0.03em; 
-  line-height: 1.1; 
+  font-size: 52px;
+  font-weight: 700;
+  letter-spacing: -0.03em;
+  line-height: 1.1;
   color: var(--forest-900);
 }
 
-.title-lg { 
+.title-lg {
   font-family: var(--font-serif);
-  font-size: 28px; 
-  font-weight: 700; 
-  letter-spacing: -0.02em; 
+  font-size: 28px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
   color: var(--text-primary);
 }
 
-.title-md { 
+.title-md {
   font-family: var(--font-serif);
-  font-size: 20px; 
-  font-weight: 600; 
+  font-size: 20px;
+  font-weight: 600;
   color: var(--text-primary);
 }
 
-.title-sm { 
-  font-size: 12px; 
-  font-weight: 700; 
-  text-transform: uppercase; 
-  letter-spacing: 0.08em; 
-  color: var(--text-muted); 
+.title-sm {
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--text-muted);
 }
 
-.muted { color: var(--text-muted); }
+.muted {
+  color: var(--text-muted);
+}
 
 /* Spinners */
 .animate-spin {
@@ -326,8 +380,12 @@ html:lang(te) .truncate, html:lang(hi) .truncate { white-space:normal; overflow-
 }
 
 @keyframes spin {
-  from { transform: rotate(0deg); }
-  to { transform: rotate(360deg); }
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 /* Responsive Grid Helpers */

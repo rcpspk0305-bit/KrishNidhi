@@ -34,7 +34,10 @@ export default function LoginPage() {
   };
 
   return (
-    <main className="section flex items-center justify-center p-4" style={{ backgroundColor: "var(--bg-canvas)" }}>
+    <main
+      className="section flex items-center justify-center p-4"
+      style={{ backgroundColor: "var(--bg-canvas)" }}
+    >
       <motion.div
         initial={{ opacity: 0, y: 15 }}
         animate={{ opacity: 1, y: 0 }}
@@ -51,13 +54,28 @@ export default function LoginPage() {
           >
             <Sprout size={28} />
           </div>
-          <h1 className="title-md font-serif text-2xl font-bold" style={{ color: "var(--forest-900)" }}>{t("KrishiNidhi Station Login")}</h1>
-          <p className="text-xs mt-1" style={{ color: "var(--text-secondary)" }}>{t("Enter your credentials to access the plant monitoring console")}</p>
+          <h1
+            className="title-md font-serif text-2xl font-bold"
+            style={{ color: "var(--forest-900)" }}
+          >
+            {t("KrishiNidhi Station Login")}
+          </h1>
+          <p
+            className="text-xs mt-1"
+            style={{ color: "var(--text-secondary)" }}
+          >
+            {t("Enter your credentials to access the plant monitoring console")}
+          </p>
         </div>
 
         <form onSubmit={handleLogin} className="flex flex-col gap-4">
           <div>
-            <label className="mono-tag font-semibold block mb-1.5" style={{ color: "var(--text-secondary)" }}>{t("MOBILE NUMBER")}</label>
+            <label
+              className="mono-tag font-semibold block mb-1.5"
+              style={{ color: "var(--text-secondary)" }}
+            >
+              {t("MOBILE NUMBER")}
+            </label>
             <div
               className="flex items-center px-3.5 rounded-xl border bg-white focus-within:ring-2 focus-within:ring-forest-600"
               style={{ borderColor: "var(--border-default)" }}
@@ -76,7 +94,12 @@ export default function LoginPage() {
           </div>
 
           <div>
-            <label className="mono-tag font-semibold block mb-1.5" style={{ color: "var(--text-secondary)" }}>{t("PASSWORD")}</label>
+            <label
+              className="mono-tag font-semibold block mb-1.5"
+              style={{ color: "var(--text-secondary)" }}
+            >
+              {t("PASSWORD")}
+            </label>
             <div
               className="flex items-center px-3.5 rounded-xl border bg-white focus-within:ring-2 focus-within:ring-forest-600"
               style={{ borderColor: "var(--border-default)" }}
@@ -123,10 +146,29 @@ export default function LoginPage() {
           </button>
         </form>
 
-        <div className="text-center text-xs pt-4 border-t flex flex-col gap-2" style={{ borderColor: "var(--border-subtle)", color: "var(--text-muted)" }}>
-          <p>{t("Demo credentials:")}<span className="mono-tag font-bold" style={{ color: "var(--forest-700)" }}>{t("9999999999 / krishi123")}</span>
+        <div
+          className="text-center text-xs pt-4 border-t flex flex-col gap-2"
+          style={{
+            borderColor: "var(--border-subtle)",
+            color: "var(--text-muted)",
+          }}
+        >
+          <p>
+            {t("Demo credentials:")}
+            <span
+              className="mono-tag font-bold"
+              style={{ color: "var(--forest-700)" }}
+            >
+              {t("9999999999 / krishi123")}
+            </span>
           </p>
-          <Link href="/" className="font-semibold underline hover:text-forest-800" style={{ color: "var(--forest-700)" }}>{t("Return to Homepage")}</Link>
+          <Link
+            href="/"
+            className="font-semibold underline hover:text-forest-800"
+            style={{ color: "var(--forest-700)" }}
+          >
+            {t("Return to Homepage")}
+          </Link>
         </div>
       </motion.div>
     </main>
