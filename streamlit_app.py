@@ -69,12 +69,11 @@ def run_async(coro):
 
 # Populate initial historical data if DB is empty
 def populate_initial_data(db):
-    # Ensure default Smart Plant device exists
     dev = db.query(db_models.Device).filter(db_models.Device.id == "esp32-node-01").first()
     if not dev:
         dev = db_models.Device(
             id="esp32-node-01",
-            name="Smart Plant Monitor #1",
+            name="Smart Plant Station #1",
             api_key_hash="seed_hash",
             status="online",
             control_mode="AUTO",
@@ -84,19 +83,18 @@ def populate_initial_data(db):
         db.add(dev)
         db.commit()
 
-    # Ensure default PlantProfile exists
     prof = db.query(db_models.PlantProfile).filter(db_models.PlantProfile.device_id == "esp32-node-01").first()
     if not prof:
         prof = db_models.PlantProfile(
             device_id="esp32-node-01",
-            plant_name="Tomato (Solanum lycopersicum)",
-            plant_type="Vegetable",
+            plant_name="Monstera Deliciosa",
+            plant_type="Tropical Foliage",
             preferred_temp_min=18.0,
             preferred_temp_max=30.0,
             preferred_humidity_min=50.0,
-            preferred_humidity_max=70.0,
+            preferred_humidity_max=75.0,
             preferred_moisture_min=30.0,
-            preferred_moisture_max=65.0
+            preferred_moisture_max=55.0
         )
         db.add(prof)
         db.commit()
@@ -109,19 +107,19 @@ def populate_initial_data(db):
             reading = db_models.SensorReading(
                 device_id="esp32-node-01",
                 timestamp=timestamp,
-                temperature=round(25.5 + random.uniform(-2, 2), 1),
-                humidity=round(40.0 + random.uniform(-5, 5), 1),
-                soil_moisture=round(48.0 + random.uniform(-6, 6), 1),
-                soil_raw=int(round(490 + random.uniform(-25, 25))),
+                temperature=round(24.5 + random.uniform(-1.5, 1.5), 1),
+                humidity=round(58.0 + random.uniform(-4, 4), 1),
+                soil_moisture=round(48.0 + random.uniform(-5, 5), 1),
+                soil_raw=int(round(490 + random.uniform(-20, 20))),
                 motion_detected=False,
                 pump_on=False,
                 control_mode="AUTO",
-                ph=round(6.8 + random.uniform(-0.2, 0.2), 2),
-                rainfall=round(50.0 + random.uniform(-10, 10), 1),
-                n=round(88.0 + random.uniform(-5, 5), 1),
-                p=round(50.0 + random.uniform(-3, 3), 1),
-                k=round(42.0 + random.uniform(-3, 3), 1),
-                tds=round(150.0 + random.uniform(-15, 15), 1)
+                ph=round(6.5 + random.uniform(-0.1, 0.1), 2),
+                rainfall=round(40.0 + random.uniform(-5, 5), 1),
+                n=round(80.0 + random.uniform(-4, 4), 1),
+                p=round(48.0 + random.uniform(-2, 2), 1),
+                k=round(40.0 + random.uniform(-2, 2), 1),
+                tds=round(140.0 + random.uniform(-10, 10), 1)
             )
             db.add(reading)
         db.commit()
@@ -131,171 +129,178 @@ populate_initial_data(db)
 
 # Streamlit Page Config
 st.set_page_config(
-    page_title="KrishiNidhi - Smart AgriTech Portal",
-    page_icon="🌱",
+    page_title="KrishiNidhi Botanical Console - Smart Plant & Irrigation Station",
+    page_icon="🌿",
     layout="wide",
     initial_sidebar_state="expanded"
 )
 
-# Custom CSS for Premium Dark-Violet Aesthetics
+# Custom Botanical Editorial Styling matching the Next.js Botanical Console
 st.markdown("""
 <style>
-    /* Dark Violet Gradient Background */
+    @import url('https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,400..700;1,6..72,400..700&family=Inter:wght@300;400;500;600;700&display=swap');
+
+    :root {
+        --bg-canvas: #fbf9f5;
+        --bg-subtle: #f3efe6;
+        --surface-card: #ffffff;
+        --text-primary: #192a21;
+        --text-secondary: #4a5c52;
+        --text-muted: #73847a;
+        --forest-800: #1b3527;
+        --forest-700: #254836;
+        --forest-600: #315c45;
+        --forest-100: #eaf1ec;
+        --terracotta-700: #9e3f26;
+        --terracotta-100: #faece8;
+        --dew-700: #255d6e;
+        --dew-100: #eaf4f7;
+        --gold-700: #8c6014;
+        --gold-100: #fcf4e4;
+        --border-subtle: rgba(25, 42, 33, 0.08);
+        --border-default: rgba(25, 42, 33, 0.14);
+    }
+
     [data-testid="stAppViewContainer"] {
-        background: linear-gradient(135deg, #0a0512 0%, #150a21 50%, #05020a 100%);
-        color: #e2d9eb;
-        font-family: 'Inter', sans-serif;
+        background-color: var(--bg-canvas) !important;
+        color: var(--text-primary) !important;
+        font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif !important;
     }
-    
-    /* Sidebar styling */
+
     [data-testid="stSidebar"] {
-        background-color: rgba(10, 5, 18, 0.96) !important;
-        border-right: 1px solid rgba(138, 43, 226, 0.2);
+        background-color: #f6f3eb !important;
+        border-right: 1px solid var(--border-default) !important;
     }
-    
-    /* Hide top Streamlit elements */
+
     header[data-testid="stHeader"] {
         background-color: transparent !important;
     }
-    
-    /* Custom Headers */
-    .title-banner {
-        background: linear-gradient(90deg, #9932cc 0%, #da70d6 50%, #8a2be2 100%);
-        padding: 24px;
+
+    /* Botanical Top Banner */
+    .botanical-topbar {
+        background: #ffffff;
+        border: 1px solid var(--border-default);
         border-radius: 16px;
-        border: 1px solid rgba(138, 43, 226, 0.3);
-        margin-bottom: 24px;
-        box-shadow: 0 4px 30px rgba(0, 0, 0, 0.5);
+        padding: 18px 24px;
+        margin-bottom: 20px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        box-shadow: 0 2px 12px rgba(25, 42, 33, 0.03);
     }
-    .main-title {
-        color: #ffffff;
-        font-weight: 800;
-        font-size: 2.8rem;
+    .botanical-tag {
+        font-size: 0.72rem;
+        font-weight: 700;
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+        color: var(--forest-700);
+        margin-bottom: 2px;
+    }
+    .botanical-title {
+        font-family: 'Newsreader', Georgia, serif;
+        font-size: 2.1rem;
+        font-weight: 700;
+        color: var(--text-primary);
         margin: 0;
-        letter-spacing: -0.02em;
+        line-height: 1.15;
     }
-    .sub-title {
-        color: #cbb4e6;
-        font-size: 1.1rem;
-        margin-top: 6px;
-        margin-bottom: 0;
-        font-weight: 300;
-    }
-    
-    /* Glass Cards */
-    .glass-card {
-        background: rgba(30, 16, 48, 0.4);
-        border: 1px solid rgba(138, 43, 226, 0.25);
+
+    /* Cards */
+    .botanical-card {
+        background: #ffffff;
+        border: 1px solid var(--border-default);
         border-radius: 16px;
         padding: 22px;
-        margin-bottom: 20px;
-        backdrop-filter: blur(12px);
-        box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.3);
+        margin-bottom: 18px;
+        box-shadow: 0 4px 16px rgba(25, 42, 33, 0.03);
     }
-    
-    .card-title {
+
+    /* Status Pills */
+    .pill {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 4px 12px;
+        border-radius: 9999px;
         font-size: 0.8rem;
-        text-transform: uppercase;
-        letter-spacing: 0.1em;
-        color: #b19cd9;
-        margin-bottom: 8px;
         font-weight: 600;
     }
-    
-    .card-value {
-        font-size: 2.2rem;
-        font-weight: 700;
-        color: #ffffff;
-        margin: 0;
-        display: inline-block;
+    .pill-forest {
+        background-color: var(--forest-100);
+        color: var(--forest-700);
+        border: 1px solid rgba(37, 72, 54, 0.2);
     }
-    .card-unit {
-        font-size: 1rem;
-        color: #da70d6;
-        margin-left: 4px;
-        display: inline-block;
+    .pill-terracotta {
+        background-color: var(--terracotta-100);
+        color: var(--terracotta-700);
+        border: 1px solid rgba(158, 63, 38, 0.2);
     }
-    .card-hint {
-        font-size: 0.78rem;
-        color: #00ffc4;
-        margin-top: 6px;
+    .pill-dew {
+        background-color: var(--dew-100);
+        color: var(--dew-700);
+        border: 1px solid rgba(37, 93, 110, 0.2);
     }
-    
-    /* Interactive elements */
+    .pill-gold {
+        background-color: var(--gold-100);
+        color: var(--gold-700);
+        border: 1px solid rgba(140, 96, 20, 0.2);
+    }
+
+    /* Buttons */
     .stButton>button {
-        background: linear-gradient(135deg, #8a2be2 0%, #da70d6 100%) !important;
-        color: white !important;
+        background: #254836 !important;
+        color: #ffffff !important;
         border: none !important;
-        border-radius: 8px !important;
-        padding: 10px 24px !important;
+        border-radius: 10px !important;
+        padding: 8px 20px !important;
         font-weight: 600 !important;
-        transition: all 0.3s ease !important;
-        box-shadow: 0 4px 15px rgba(138, 43, 226, 0.4) !important;
+        font-size: 0.88rem !important;
+        transition: all 0.2s ease !important;
+        box-shadow: 0 2px 8px rgba(37, 72, 54, 0.15) !important;
     }
     .stButton>button:hover {
-        transform: translateY(-2px) !important;
-        box-shadow: 0 6px 20px rgba(218, 112, 214, 0.6) !important;
+        background: #1b3527 !important;
+        transform: translateY(-1px) !important;
+        box-shadow: 0 4px 12px rgba(37, 72, 54, 0.25) !important;
     }
-    
-    /* Custom alerts */
+
+    /* Notification items */
     .notification-item {
-        background: rgba(255, 255, 255, 0.03);
-        border-left: 3px solid #da70d6;
-        padding: 10px 14px;
+        background: #f7f4ed;
+        border-left: 3px solid var(--forest-600);
+        padding: 9px 13px;
         margin-bottom: 8px;
         border-radius: 0 8px 8px 0;
-        font-size: 0.88rem;
-    }
-    
-    .badge {
-        background: rgba(138, 43, 226, 0.2);
-        color: #e0b0ff;
-        border: 1px solid rgba(138, 43, 226, 0.4);
-        padding: 4px 12px;
-        border-radius: 12px;
-        font-size: 0.78rem;
-        font-weight: 600;
-        display: inline-block;
-        margin-bottom: 12px;
+        font-size: 0.86rem;
+        color: var(--text-secondary);
     }
 </style>
 """, unsafe_allow_html=True)
 
-# Application Top Banner
-st.markdown("""
-<div class="title-banner">
-    <span class="badge">🌱 AgriTech Operations Control Center</span>
-    <h1 class="main-title">KrishiNidhi</h1>
-    <h3 class="sub-title">Advanced Machine Learning & Generative AI Dashboard</h3>
-</div>
-""", unsafe_allow_html=True)
+# Navigation / Sidebar
+st.sidebar.markdown("<p style='font-size:0.75rem; letter-spacing:0.1em; font-weight:700; color:#73847a; text-transform:uppercase; margin-bottom:4px;'>Navigation</p>", unsafe_allow_html=True)
+st.sidebar.markdown("<h2 style='color:#192a21; margin-top:0; margin-bottom:18px; font-family:serif; font-weight:700;'>Botanical Console</h2>", unsafe_allow_html=True)
 
-# Navigation / Sidebar config
-st.sidebar.markdown("<h2 style='color:#e2d9eb; margin-bottom:20px; font-weight:700;'>Navigation</h2>", unsafe_allow_html=True)
 app_mode = st.sidebar.radio(
     "Select Workspace",
-    ["📊 Real-time Dashboard", "🌾 Crop Recommendation", "🍃 Leaf Disease Diagnosis", "🤖 KrishiNidhi AI Chatbot"]
+    ["🌿 Smart Plant Station", "🌾 Crop Recommendation", "🍃 Leaf Disease Diagnosis", "🤖 KrishiNidhi AI Chatbot"]
 )
 
-# Shared Status in Sidebar
 st.sidebar.markdown("---")
-st.sidebar.markdown("<h3 style='color:#b19cd9;'>System Config</h3>", unsafe_allow_html=True)
-
-# Display Key Configuration Statuses
-has_gemini = "Configured" if settings.GEMINI_API_KEY else "Missing (Using Fallbacks)"
+st.sidebar.markdown("<p style='font-size:0.75rem; letter-spacing:0.1em; font-weight:700; color:#73847a; text-transform:uppercase;'>Hardware & AI Status</p>", unsafe_allow_html=True)
+has_gemini = "Configured" if settings.GEMINI_API_KEY else "Fallback Mode"
 has_assistant = "Configured" if getattr(settings, "OPENROUTER_API_KEY", None) else "Fallback Mode"
-has_twilio = "Configured" if settings.TWILIO_ACCOUNT_SID and settings.TWILIO_AUTH_TOKEN else "Missing"
-st.sidebar.markdown(f"**Gemini GenAI:** {has_gemini}")
-st.sidebar.markdown(f"**Multilingual Assistant:** {has_assistant}")
-st.sidebar.markdown(f"**Twilio SMS Alerting:** {has_twilio}")
+st.sidebar.markdown(f"**ESP8266 Link:** `{'Online' if iot_metadata.get('connected') else 'Standby'}`")
+st.sidebar.markdown(f"**AI Assistant:** {has_assistant}")
+st.sidebar.markdown(f"**Crop Doctor:** {has_gemini}")
 
 # Active alerts container helper
 def add_notification(text):
     if "notifications" not in st.session_state:
         st.session_state.notifications = [
-            "Soil moisture dipped 4% from the previous reading.",
-            "Water TDS is inside safe irrigation range.",
-            "Predicted crop fit remains stable for the next 6-hour window."
+            "[07:15:00] Soil moisture at optimal balance for Monstera.",
+            "[07:00:00] Hardware linked. Auto irrigation active.",
+            "[06:30:00] Ambient temperature stable within microclimate target."
         ]
     st.session_state.notifications.insert(0, f"[{datetime.now().strftime('%H:%M:%S')}] {text}")
     if len(st.session_state.notifications) > 6:
@@ -303,17 +308,282 @@ def add_notification(text):
 
 if "notifications" not in st.session_state:
     st.session_state.notifications = [
-        "[20:45:01] Soil moisture dipped 4% from the previous reading.",
-        "[20:30:12] Water TDS is inside safe irrigation range.",
-        "[20:00:00] Predicted crop fit remains stable for the next 6-hour window."
+        "[07:15:00] Soil moisture at optimal balance for Monstera.",
+        "[07:00:00] Hardware linked. Auto irrigation active.",
+        "[06:30:00] Ambient temperature stable within microclimate target."
     ]
 
-# ----------------- TABS / SCREEN DEFINITIONS -----------------
 
-if app_mode == "📊 Real-time Dashboard":
+# ----------------- 1. SMART PLANT & IRRIGATION STATION -----------------
+
+if app_mode == "🌿 Smart Plant Station":
+    # Top Console Header Bar matching Screenshot 2
+    is_live = iot_metadata.get("connected", False)
+    status_pill_class = "pill-forest" if is_live else "pill-terracotta"
+    status_pill_label = "ESP8266 Live" if is_live else "ESP8266 Offline"
+
+    st.markdown(f"""
+    <div class="botanical-topbar">
+        <div>
+            <div class="botanical-tag">KRISHINIDHI BOTANICAL CONSOLE</div>
+            <h1 class="botanical-title">Smart Plant & Irrigation Station</h1>
+        </div>
+        <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
+            <span class="pill {status_pill_class}">● {status_pill_label}</span>
+            <span class="pill pill-dew">((•)) Live SSE: Connected</span>
+        </div>
+    </div>
+    """, unsafe_allow_html=True)
+
+    # Fetch latest plant profile & reading from database
+    db = get_db()
+    plant_prof = db.query(db_models.PlantProfile).filter(db_models.PlantProfile.device_id == "esp32-node-01").first()
+    plant_name = plant_prof.plant_name if plant_prof else "Monstera Deliciosa"
+    last_db_reading = db.query(db_models.SensorReading).order_by(db_models.SensorReading.timestamp.desc()).first()
+
+    temp_val = latest_iot_data.get("temperature", 25.5)
+    hum_val = latest_iot_data.get("humidity", 40.0)
+    soil_val = latest_iot_data.get("soil_moisture", 48.0)
+    soil_raw_val = latest_iot_data.get("soil_raw", 490)
+    motion_val = latest_iot_data.get("motion_detected", False)
+    pump_val = latest_iot_data.get("pump_on", False)
+    mode_val = latest_iot_data.get("control_mode", "AUTO")
+
+    # Agronomic health scoring
+    if soil_val is not None and 30 <= soil_val <= 60:
+        health_status = "Optimal Microclimate"
+        health_pill = "pill-forest"
+        health_score = 94
+    elif soil_val is not None and soil_val < 30:
+        health_status = "Soil Moisture Low"
+        health_pill = "pill-terracotta"
+        health_score = 58
+    else:
+        health_status = "Attention Recommended"
+        health_pill = "pill-gold"
+        health_score = 75
+
+    # 1. PLANT HEALTH HERO CARD (Matches Screenshot 2 Hero)
+    st.markdown(f"""
+    <div class="botanical-card" style="padding: 24px; margin-bottom: 20px;">
+        <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px;">
+            <div style="display: flex; align-items: center; gap: 18px;">
+                <div style="width: 56px; height: 56px; border-radius: 16px; background: #eaf1ec; border: 1px solid #d3e2d7; display: flex; align-items: center; justify-content: center; font-size: 28px;">
+                    🌱
+                </div>
+                <div>
+                    <h2 style="font-family: 'Newsreader', Georgia, serif; font-size: 2.2rem; font-weight: 700; color: #192a21; margin: 0;">{plant_name}</h2>
+                    <div style="display: flex; gap: 8px; flex-wrap: wrap; margin-top: 6px;">
+                        <span class="pill {health_pill}">Health: {health_status}</span>
+                        <span class="pill {status_pill_class}">{status_pill_label}</span>
+                        <span class="pill pill-dew">Mode: {mode_val}</span>
+                    </div>
+                    <p style="margin: 8px 0 0 0; color: #73847a; font-size: 0.85rem;">
+                        ⏱️ Telemetry Timestamp: <b style="color: #4a5c52;">{datetime.now().strftime('%I:%M:%S %p')}</b> | Awaiting continuous sensor tick
+                    </p>
+                </div>
+            </div>
+            <div style="background: #f5f2ea; border: 1px solid #e8e3da; border-radius: 14px; padding: 14px 22px; text-align: center; min-width: 150px;">
+                <span style="display:block; font-size: 0.72rem; letter-spacing: 0.1em; text-transform: uppercase; font-weight: 700; color: #73847a;">AGRONOMIC INDEX</span>
+                <span style="font-family: 'Newsreader', Georgia, serif; font-size: 2.4rem; font-weight: 700; color: #1b3527;">{health_score}</span>
+                <span style="font-size: 0.85rem; color: #73847a; font-weight: normal;"> / 100</span>
+            </div>
+        </div>
+        
+        <!-- Snapshot quick telemetry ribbon -->
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px; margin-top: 20px; padding-top: 18px; border-top: 1px solid rgba(25, 42, 33, 0.08);">
+            <div style="background: #f5f2ea; border: 1px solid #e8e3da; border-radius: 12px; padding: 12px 16px;">
+                <div style="font-size: 0.8rem; color: #4a5c52; font-weight: 600;">🌡️ Temperature</div>
+                <div style="font-family: 'Newsreader', Georgia, serif; font-size: 1.7rem; font-weight: 700; color: #192a21; margin-top: 2px;">{temp_val}°C</div>
+            </div>
+            <div style="background: #f5f2ea; border: 1px solid #e8e3da; border-radius: 12px; padding: 12px 16px;">
+                <div style="font-size: 0.8rem; color: #4a5c52; font-weight: 600;">💨 Humidity</div>
+                <div style="font-family: 'Newsreader', Georgia, serif; font-size: 1.7rem; font-weight: 700; color: #192a21; margin-top: 2px;">{hum_val}%</div>
+            </div>
+            <div style="background: #f5f2ea; border: 1px solid #e8e3da; border-radius: 12px; padding: 12px 16px;">
+                <div style="font-size: 0.8rem; color: #4a5c52; font-weight: 600;">💧 Soil Moisture</div>
+                <div style="font-family: 'Newsreader', Georgia, serif; font-size: 1.7rem; font-weight: 700; color: #192a21; margin-top: 2px;">{soil_val}%</div>
+            </div>
+            <div style="background: #f5f2ea; border: 1px solid #e8e3da; border-radius: 12px; padding: 12px 16px;">
+                <div style="font-size: 0.8rem; color: #4a5c52; font-weight: 600;">🌱 Control Mode</div>
+                <div style="font-family: 'Newsreader', Georgia, serif; font-size: 1.5rem; font-weight: 700; color: #254836; margin-top: 4px;">{mode_val}</div>
+            </div>
+        </div>
+    </div>
+    """, unsafe_allow_html=True)
+
+    # 2. DETAILED SENSOR CARDS GRID (Matches Screenshot 2's 4 physical cards)
+    col_c1, col_c2, col_c3, col_c4 = st.columns(4)
+
+    with col_c1:
+        st.markdown(f"""
+        <div class="botanical-card" style="height: 100%;">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+                <div style="display:flex; align-items:center; gap:6px; font-size:0.8rem; font-weight:700; color:#4a5c52;">
+                    <span>🌡️ Ambient Temp (DHT11)</span>
+                </div>
+                <span style="font-family:monospace; font-size:0.72rem; color:#73847a;">GPIO 12 / D6</span>
+            </div>
+            <div style="font-family:'Newsreader', Georgia, serif; font-size:2.4rem; font-weight:700; color:#192a21; margin:8px 0;">
+                {temp_val} <span style="font-size:1rem; font-weight:600; color:#73847a;">°C</span>
+            </div>
+            <div style="padding-top:10px; border-top:1px solid #e8e3da; font-size:0.75rem; color:#73847a;">
+                <div>Target: 18.0°C – 30.0°C</div>
+                <p style="margin:4px 0 0 0; font-weight:600; color:#254836;">Optimal Microclimate</p>
+            </div>
+        </div>
+        """, unsafe_allow_html=True)
+
+    with col_c2:
+        st.markdown(f"""
+        <div class="botanical-card" style="height: 100%;">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+                <div style="display:flex; align-items:center; gap:6px; font-size:0.8rem; font-weight:700; color:#4a5c52;">
+                    <span>💨 Relative Humidity</span>
+                </div>
+                <span style="font-family:monospace; font-size:0.72rem; color:#73847a;">1-Wire Digital</span>
+            </div>
+            <div style="font-family:'Newsreader', Georgia, serif; font-size:2.4rem; font-weight:700; color:#192a21; margin:8px 0;">
+                {hum_val} <span style="font-size:1rem; font-weight:600; color:#73847a;">% RH</span>
+            </div>
+            <div style="padding-top:10px; border-top:1px solid #e8e3da; font-size:0.75rem; color:#73847a;">
+                <div>Target: 50% – 75% RH</div>
+                <p style="margin:4px 0 0 0; font-weight:600; color:#255d6e;">Comfort Zone</p>
+            </div>
+        </div>
+        """, unsafe_allow_html=True)
+
+    with col_c3:
+        soil_bar_width = min(100, max(0, int(soil_val)))
+        soil_color = "#315c45" if soil_val >= 30 else "#bd5134"
+        st.markdown(f"""
+        <div class="botanical-card" style="height: 100%;">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+                <div style="display:flex; align-items:center; gap:6px; font-size:0.8rem; font-weight:700; color:#4a5c52;">
+                    <span>💧 Soil Moisture (LM393)</span>
+                </div>
+                <span style="font-family:monospace; font-size:0.72rem; color:#73847a;">ADC 0 / A0</span>
+            </div>
+            <div style="display:flex; align-items:baseline; gap:6px; margin:8px 0;">
+                <span style="font-family:'Newsreader', Georgia, serif; font-size:2.4rem; font-weight:700; color:#192a21;">{soil_val}</span>
+                <span style="font-size:1rem; font-weight:600; color:#73847a;">%</span>
+                <span style="margin-left:auto; font-family:monospace; font-size:0.72rem; color:#73847a;">Raw: {soil_raw_val}</span>
+            </div>
+            <div style="width:100%; height:8px; background:#f0ece2; border-radius:999px; overflow:hidden; margin:8px 0;">
+                <div style="width:{soil_bar_width}%; height:100%; background:{soil_color}; border-radius:999px;"></div>
+            </div>
+            <div style="padding-top:10px; border-top:1px solid #e8e3da; font-size:0.75rem; color:#73847a; display:flex; justify-content:space-between;">
+                <span>Auto-on: &lt;30%</span>
+                <span>Target cutoff: 55%</span>
+            </div>
+        </div>
+        """, unsafe_allow_html=True)
+
+    with col_c4:
+        motion_label = "Movement Detected 🐾" if motion_val else "Field Clear 🌿"
+        motion_badge_bg = "#faece8" if motion_val else "#eaf1ec"
+        motion_badge_color = "#9e3f26" if motion_val else "#254836"
+        st.markdown(f"""
+        <div class="botanical-card" style="height: 100%;">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+                <div style="display:flex; align-items:center; gap:6px; font-size:0.8rem; font-weight:700; color:#4a5c52;">
+                    <span>🐾 PIR Motion Sensor</span>
+                </div>
+                <span style="font-family:monospace; font-size:0.72rem; color:#73847a;">GPIO 13 / D7</span>
+            </div>
+            <div style="font-family:'Newsreader', Georgia, serif; font-size:1.7rem; font-weight:700; color:{motion_badge_color}; margin:14px 0 10px 0;">
+                {motion_label}
+            </div>
+            <div style="padding-top:10px; border-top:1px solid #e8e3da; font-size:0.75rem; color:#73847a;">
+                <span>Passive infrared detection around planter perimeter</span>
+            </div>
+        </div>
+        """, unsafe_allow_html=True)
+
+    # 3. IRRIGATION PUMP CONTROLLER
+    st.markdown("### 🚰 Smart Irrigation Pump Controller")
+    col_pump_info, col_pump_actions = st.columns([2, 1])
+
+    with col_pump_info:
+        pump_state_str = "ACTIVE (PUMPING WATER)" if pump_val else "STANDBY / IDLE"
+        pump_state_color = "#254836" if pump_val else "#73847a"
+        st.markdown(f"""
+        <div class="botanical-card" style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:16px;">
+            <div>
+                <span class="botanical-tag">Submersible 5V Relay IN (Active LOW on D5)</span>
+                <div style="font-family:'Newsreader', Georgia, serif; font-size:1.9rem; font-weight:700; color:{pump_state_color}; margin-top:2px;">
+                    {pump_state_str}
+                </div>
+                <p style="margin:4px 0 0 0; font-size:0.82rem; color:#73847a;">
+                    Safety Failsafes: <b>15s continuous runtime watchdog</b> | <b>60s rest cooldown limit</b>
+                </p>
+            </div>
+            <div>
+                <span class="pill pill-forest" style="font-size:0.9rem;">Mode: {mode_val}</span>
+            </div>
+        </div>
+        """, unsafe_allow_html=True)
+
+    with col_pump_actions:
+        st.markdown("<div style='margin-top:6px;'></div>", unsafe_allow_html=True)
+        col_act1, col_act2 = st.columns(2)
+        with col_act1:
+            if st.button("🟢 Start Pump", use_container_width=True):
+                latest_iot_data["pump_on"] = True
+                latest_iot_data["control_mode"] = "MANUAL"
+                db = get_db()
+                dev_obj = db.query(db_models.Device).filter(db_models.Device.id == "esp32-node-01").first()
+                if dev_obj:
+                    dev_obj.pump_state = True
+                    dev_obj.control_mode = "MANUAL"
+                db.add(db_models.PumpEvent(
+                    device_id="esp32-node-01",
+                    requested_state=True,
+                    confirmed_state=True,
+                    source="streamlit_manual",
+                    control_mode="MANUAL",
+                    reason="Streamlit botanical manual operator override"
+                ))
+                db.commit()
+                add_notification("Irrigation Pump manually started.")
+                st.success("Pump Activated!")
+                st.rerun()
+
+        with col_act2:
+            if st.button("🔴 Stop Pump", use_container_width=True):
+                latest_iot_data["pump_on"] = False
+                db = get_db()
+                dev_obj = db.query(db_models.Device).filter(db_models.Device.id == "esp32-node-01").first()
+                if dev_obj:
+                    dev_obj.pump_state = False
+                db.add(db_models.PumpEvent(
+                    device_id="esp32-node-01",
+                    requested_state=False,
+                    confirmed_state=False,
+                    source="streamlit_manual",
+                    control_mode=latest_iot_data.get("control_mode", "MANUAL"),
+                    reason="Streamlit botanical manual operator stop"
+                ))
+                db.commit()
+                add_notification("Irrigation Pump stopped.")
+                st.warning("Pump Stopped.")
+                st.rerun()
+
+        if st.button("⚙️ Re-enable AUTO Mode", use_container_width=True):
+            latest_iot_data["control_mode"] = "AUTO"
+            db = get_db()
+            dev_obj = db.query(db_models.Device).filter(db_models.Device.id == "esp32-node-01").first()
+            if dev_obj:
+                dev_obj.control_mode = "AUTO"
+            db.commit()
+            add_notification("Switched to autonomous moisture threshold mode.")
+            st.rerun()
+
+    st.markdown("---")
+
+    # 4. INTERACTIVE TELEMETRY & ANALYTICS (Preserves Subheader for AppTest)
     st.subheader("Interactive Telemetry & Analytics")
-    
-    # Telemetry source selector
+
     telemetry_mode = st.radio(
         "Telemetry Source",
         ["🛰️ Real-World Live IoT Stream", "🧪 Manual Telemetry Simulator"],
@@ -322,57 +592,40 @@ if app_mode == "📊 Real-time Dashboard":
     )
 
     if telemetry_mode == "🛰️ Real-World Live IoT Stream":
-        is_live = iot_metadata.get("connected", False)
-        last_pkt = iot_metadata.get("last_packet_time")
-        status_color = "#00ffc4" if is_live else "#fbbf24"
-        status_text = "HARDWARE LIVE & TRANSMITTING" if is_live else "WAITING FOR HARDWARE TELEMETRY"
-        dev_id = iot_metadata.get("device_id", "esp32-node-01")
-        source_name = iot_metadata.get("source", "standby").upper()
-        pkt_cnt = iot_metadata.get("packet_count", 0)
-
-        col_badge, col_sync = st.columns([3, 1])
-        with col_badge:
-            st.markdown(f"""
-            <div style="background: rgba(18, 22, 38, 0.7); border: 1px solid rgba(255, 255, 255, 0.08); border-left: 4px solid {status_color}; border-radius: 12px; padding: 12px 18px; margin-bottom: 12px;">
-                <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px;">
-                    <div>
-                        <span style="display: inline-block; width: 8px; height: 8px; border-radius: 50%; background-color: {status_color}; margin-right: 6px; box-shadow: 0 0 8px {status_color};"></span>
-                        <b style="color: {status_color}; font-size: 0.85rem; letter-spacing: 0.05em;">{status_text}</b>
-                        <span style="color: #94a3b8; font-size: 0.85rem; margin-left: 8px;">| Device: <code style="color: #60a5fa;">{dev_id}</code></span>
-                        <span style="color: #94a3b8; font-size: 0.85rem; margin-left: 8px;">| Source: <span style="color: #c084fc;">{source_name}</span></span>
-                    </div>
-                    <div style="color: #94a3b8; font-size: 0.8rem;">
-                        Packets: <b style="color: white;">{pkt_cnt}</b> | Last Seen: <b style="color: white;">{last_pkt[-8:] if last_pkt else 'Never'}</b>
-                    </div>
+        st.markdown(f"""
+        <div style="background: #ffffff; border: 1px solid #e7e1d8; border-left: 4px solid #254836; border-radius: 12px; padding: 14px 18px; margin-bottom: 14px;">
+            <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px;">
+                <div>
+                    <b style="color: #254836; font-size: 0.9rem;">{'HARDWARE LIVE & TRANSMITTING' if is_live else 'WAITING FOR HARDWARE TELEMETRY'}</b>
+                    <span style="color: #73847a; font-size: 0.85rem; margin-left: 10px;">| Device: <code>esp32-node-01</code></span>
+                </div>
+                <div style="color: #73847a; font-size: 0.85rem;">
+                    Packets: <b>{iot_metadata.get('packet_count', 0)}</b> | Last Seen: <b>{iot_metadata.get('last_packet_time', 'Never')[-8:] if iot_metadata.get('last_packet_time') else 'Never'}</b>
                 </div>
             </div>
-            """, unsafe_allow_html=True)
+        </div>
+        """, unsafe_allow_html=True)
 
-        with col_sync:
-            if st.button("🔄 Sync Telemetry", use_container_width=True):
-                st.rerun()
-
-        with st.expander("🔌 Quick Hardware Ingestion & Terminal Test Command"):
+        with st.expander("🔌 Microcontroller Ingestion Endpoints (ESP8266 & ESP32)"):
             st.markdown("""
-            **1. HTTP Ingestion Endpoint (POST):**
+            **1. HTTP Telemetry Ingestion (POST):**
             ```bash
-            curl -X POST http://localhost:8000/iot/telemetry -H "Content-Type: application/json" -d '{"device_id": "esp32-field-01", "temperature": 28.4, "humidity": 65.0, "ph": 6.8, "N": 92, "P": 48, "K": 45, "rainfall": 55.0, "tds": 145}'
+            curl -X POST http://localhost:8000/api/devices/esp32-node-01/telemetry \\
+              -H "Content-Type: application/json" \\
+              -d '{"device_id": "esp32-node-01", "temperature": 25.5, "humidity": 58.0, "soil_moisture": 48.0, "soil_raw": 490, "motion_detected": false, "pump_on": false}'
             ```
             **2. MQTT Ingestion Broker:**
             - **Broker**: `broker.hivemq.com:1883`
             - **Topic**: `agritech/ps10/sensors`
-            - **Sample JSON**: `{"device_id": "esp32-node-01", "temperature": 27.5, "humidity": 60, "ph": 6.5, "N": 85, "P": 50, "K": 40}`
-            - **Firmware code**: Check `iot/esp32/esp32_mqtt.ino` and `iot/esp32/sensor_readings.ino`.
             """)
     else:
-        # Simulate data controls
+        # Simulator Controls
         col_ctr, col_state = st.columns([2, 1])
         with col_ctr:
-            st.write("Adjust sensor sliders to test live ML recommendations and dashboard graphs.")
+            st.write("Adjust sensor sliders to test live ML recommendations, soil trends, and pump behavior.")
             
         with col_state:
-            # Save simulated data button
-            if st.button("🔄 Push Live Reading to DB"):
+            if st.button("🔄 Push Live Reading to DB", use_container_width=True):
                 db = get_db()
                 new_reading = db_models.SensorReading(
                     device_id="esp32-node-01",
@@ -397,11 +650,10 @@ if app_mode == "📊 Real-time Dashboard":
                     dev_obj.control_mode = latest_iot_data.get("control_mode", "AUTO")
                     dev_obj.last_seen = datetime.now(timezone.utc)
                 db.commit()
-                add_notification(f"Manual telemetry reading written. Temp: {latest_iot_data['temperature']}°C, Moisture: {latest_iot_data.get('soil_moisture', 48.0)}%")
+                add_notification(f"Manual reading pushed: Temp {latest_iot_data['temperature']}°C, Moisture {latest_iot_data.get('soil_moisture', 48.0)}%")
                 st.success("Reading successfully pushed to Database!")
                 st.rerun()
 
-        # Create sliders for real-time adjustments
         col_s1, col_s2, col_s3, col_s4 = st.columns(4)
         with col_s1:
             latest_iot_data["temperature"] = round(st.slider("Temperature (°C)", 10.0, 50.0, float(latest_iot_data["temperature"]), 0.1), 1)
@@ -416,8 +668,7 @@ if app_mode == "📊 Real-time Dashboard":
             latest_iot_data["rainfall"] = round(st.slider("Rainfall (mm)", 20.0, 300.0, float(latest_iot_data["rainfall"]), 0.1), 1)
             latest_iot_data["tds"] = round(st.slider("Water TDS (ppm)", 0.0, 500.0, float(latest_iot_data.get("tds", 150.0)), 1.0), 1)
 
-        # Smart Plant IoT Specific Controls
-        st.markdown("##### 🌿 Smart Plant IoT Telemetry & Actuation")
+        st.markdown("##### 🌿 Smart Plant Hardware Emulation")
         col_p1, col_p2, col_p3, col_p4 = st.columns(4)
         with col_p1:
             latest_iot_data["soil_moisture"] = round(st.slider("Soil Moisture (%)", 0.0, 100.0, float(latest_iot_data.get("soil_moisture", 48.0)), 0.5), 1)
@@ -434,95 +685,11 @@ if app_mode == "📊 Real-time Dashboard":
 
     st.markdown("---")
 
-    # Smart Plant Overview Cards
-    moisture_val = latest_iot_data.get("soil_moisture", 48.0)
-    moisture_status = "Optimal (30-65%)" if 30 <= moisture_val <= 65 else ("Dry (Irrigation Needed)" if moisture_val < 30 else "Saturated / Wet")
-    moisture_color = "#00ffc4" if 30 <= moisture_val <= 65 else ("#f59e0b" if moisture_val < 30 else "#38bdf8")
+    # 5. HISTORICAL SENSOR TRENDS & SOIL NPK RATIO
+    col_chart_left, col_chart_right = st.columns([2, 1])
 
-    pump_status = "ACTIVE (PUMPING)" if latest_iot_data.get("pump_on", False) else "IDLE / OFF"
-    pump_color = "#00ffc4" if latest_iot_data.get("pump_on", False) else "#94a3b8"
-
-    motion_status = "MOVEMENT DETECTED" if latest_iot_data.get("motion_detected", False) else "QUIET / NO MOTION"
-    motion_color = "#f43f5e" if latest_iot_data.get("motion_detected", False) else "#00ffc4"
-
-    col_sp1, col_sp2, col_sp3 = st.columns(3)
-    with col_sp1:
-        st.markdown(f"""
-        <div class="glass-card" style="border-left: 4px solid {moisture_color};">
-            <div class="card-title">🌱 Soil Moisture Level</div>
-            <div class="card-value">{moisture_val}</div>
-            <div class="card-unit">%</div>
-            <div class="card-hint" style="color: {moisture_color}; font-weight:600;">Status: {moisture_status}</div>
-        </div>
-        """, unsafe_allow_html=True)
-
-    with col_sp2:
-        st.markdown(f"""
-        <div class="glass-card" style="border-left: 4px solid {pump_color};">
-            <div class="card-title">🚰 Smart Irrigation Pump</div>
-            <div style="font-size: 1.5rem; font-weight: 700; color: #ffffff; margin-top: 6px;">{pump_status}</div>
-            <div class="card-hint" style="color: #da70d6; font-weight: 600;">Mode: {latest_iot_data.get('control_mode', 'AUTO')}</div>
-        </div>
-        """, unsafe_allow_html=True)
-
-    with col_sp3:
-        st.markdown(f"""
-        <div class="glass-card" style="border-left: 4px solid {motion_color};">
-            <div class="card-title">🐾 PIR Security & Motion</div>
-            <div style="font-size: 1.5rem; font-weight: 700; color: #ffffff; margin-top: 6px;">{motion_status}</div>
-            <div class="card-hint" style="color: {motion_color}; font-weight: 600;">GPIO D7 Passive Infrared</div>
-        </div>
-        """, unsafe_allow_html=True)
-
-    # Core Metrics Section
-    col_m1, col_m2, col_m3, col_m4 = st.columns(4)
-    
-    with col_m1:
-        st.markdown(f"""
-        <div class="glass-card">
-            <div class="card-title">Temperature</div>
-            <div class="card-value">{latest_iot_data['temperature']}</div>
-            <div class="card-unit">°C</div>
-            <div class="card-hint">Optimal: 20-30°C</div>
-        </div>
-        """, unsafe_allow_html=True)
-        
-    with col_m2:
-        st.markdown(f"""
-        <div class="glass-card">
-            <div class="card-title">Humidity</div>
-            <div class="card-value">{latest_iot_data['humidity']}</div>
-            <div class="card-unit">%</div>
-            <div class="card-hint">Optimal: 40-70%</div>
-        </div>
-        """, unsafe_allow_html=True)
-        
-    with col_m3:
-        st.markdown(f"""
-        <div class="glass-card">
-            <div class="card-title">Soil pH</div>
-            <div class="card-value">{latest_iot_data['ph']}</div>
-            <div class="card-unit">pH</div>
-            <div class="card-hint">Optimal: 6.0-7.5</div>
-        </div>
-        """, unsafe_allow_html=True)
-        
-    with col_m4:
-        st.markdown(f"""
-        <div class="glass-card">
-            <div class="card-title">Water TDS</div>
-            <div class="card-value">{latest_iot_data.get('tds', 150.0)}</div>
-            <div class="card-unit">ppm</div>
-            <div class="card-hint">Optimal: &lt; 200 ppm</div>
-        </div>
-        """, unsafe_allow_html=True)
-
-    # Main Visual Analytics
-    col_left, col_right = st.columns([2, 1])
-
-    with col_left:
+    with col_chart_left:
         st.subheader("Historical Sensor Trends")
-        # Load historical readings from database
         db = get_db()
         readings = db.query(db_models.SensorReading).order_by(db_models.SensorReading.timestamp.desc()).limit(30).all()
         
@@ -542,28 +709,27 @@ if app_mode == "📊 Real-time Dashboard":
                 })
             df = pd.DataFrame(data_list)
             
-            # Multi-series plot
             fig = px.line(
                 df, 
                 x="Timestamp", 
                 y=["Temperature (°C)", "Humidity (%)", "Soil Moisture (%)", "Rainfall (mm)"],
-                title="Soil Temperature, Moisture, & Rain Trends",
-                color_discrete_sequence=["#8a2be2", "#da70d6", "#00ffc4", "#38bdf8"]
+                title="Microclimate & Moisture Trends (Last 24h)",
+                color_discrete_sequence=["#bd5134", "#255d6e", "#254836", "#8c6014"]
             )
             fig.update_layout(
-                plot_bgcolor='rgba(0,0,0,0)',
-                paper_bgcolor='rgba(0,0,0,0)',
-                font_color="#e2d9eb",
-                xaxis=dict(showgrid=True, gridcolor='rgba(255,255,255,0.05)'),
-                yaxis=dict(showgrid=True, gridcolor='rgba(255,255,255,0.05)'),
+                plot_bgcolor='#ffffff',
+                paper_bgcolor='#ffffff',
+                font_color="#192a21",
+                font_family="Inter",
+                xaxis=dict(showgrid=True, gridcolor='#f0ece2'),
+                yaxis=dict(showgrid=True, gridcolor='#f0ece2'),
                 legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1)
             )
             st.plotly_chart(fig, use_container_width=True)
         else:
             st.info("No historical readings found in database.")
 
-    with col_right:
-        # NPK Distribution Bar Chart
+    with col_chart_right:
         st.subheader("Soil NPK Ratio")
         npk_data = pd.DataFrame({
             "Nutrient": ["Nitrogen (N)", "Phosphorus (P)", "Potassium (K)"],
@@ -576,18 +742,19 @@ if app_mode == "📊 Real-time Dashboard":
             y="Current Level",
             color="Nutrient",
             color_discrete_map={
-                "Nitrogen (N)": "#8a2be2",
-                "Phosphorus (P)": "#da70d6",
-                "Potassium (K)": "#00ffc4"
+                "Nitrogen (N)": "#254836",
+                "Phosphorus (P)": "#8c6014",
+                "Potassium (K)": "#255d6e"
             }
         )
         fig_npk.update_layout(
-            plot_bgcolor='rgba(0,0,0,0)',
-            paper_bgcolor='rgba(0,0,0,0)',
-            font_color="#e2d9eb",
+            plot_bgcolor='#ffffff',
+            paper_bgcolor='#ffffff',
+            font_color="#192a21",
+            font_family="Inter",
             showlegend=False,
             xaxis=dict(showgrid=False),
-            yaxis=dict(showgrid=True, gridcolor='rgba(255,255,255,0.05)')
+            yaxis=dict(showgrid=True, gridcolor='#f0ece2')
         )
         st.plotly_chart(fig_npk, use_container_width=True)
         
@@ -605,68 +772,23 @@ if app_mode == "📊 Real-time Dashboard":
         rec_crop = predict_crop(sens_data)
         
         st.markdown(f"""
-        <div class="glass-card" style="border-color: rgba(0, 255, 196, 0.4)">
-            <h4 style="margin-top: 0; color: #00ffc4;">🌱 Live ML Model Output</h4>
-            <p style="margin-bottom: 4px; font-size: 0.9rem;">Recommended Crop for Current Soil/Telemetry:</p>
-            <h2 style="color: #ffffff; margin-top: 4px; font-size: 2.2rem; font-weight: 800;">{rec_crop}</h2>
+        <div class="botanical-card" style="border-left: 4px solid #254836;">
+            <div class="botanical-tag">Live ML Agronomy Match</div>
+            <div style="font-family:'Newsreader', Georgia, serif; color: #192a21; font-size: 2rem; font-weight: 700; margin-top: 4px;">{rec_crop}</div>
+            <p style="margin: 4px 0 0 0; font-size: 0.82rem; color: #73847a;">Optimal crop match for current soil telemetry profile.</p>
         </div>
         """, unsafe_allow_html=True)
 
-        # Quick Irrigation Pump Actuation
-        st.markdown("### 🚰 Operator Pump Override")
-        col_btn1, col_btn2 = st.columns(2)
-        with col_btn1:
-            if st.button("🟢 Start Pump"):
-                latest_iot_data["pump_on"] = True
-                latest_iot_data["control_mode"] = "MANUAL"
-                db = get_db()
-                dev_obj = db.query(db_models.Device).filter(db_models.Device.id == "esp32-node-01").first()
-                if dev_obj:
-                    dev_obj.pump_state = True
-                    dev_obj.control_mode = "MANUAL"
-                db.add(db_models.PumpEvent(
-                    device_id="esp32-node-01",
-                    requested_state=True,
-                    confirmed_state=True,
-                    source="streamlit_manual",
-                    control_mode="MANUAL",
-                    reason="Streamlit dashboard manual operator override"
-                ))
-                db.commit()
-                add_notification("Irrigation Pump manually energized via Streamlit.")
-                st.success("Pump turned ON!")
-                st.rerun()
-
-        with col_btn2:
-            if st.button("🔴 Stop Pump"):
-                latest_iot_data["pump_on"] = False
-                db = get_db()
-                dev_obj = db.query(db_models.Device).filter(db_models.Device.id == "esp32-node-01").first()
-                if dev_obj:
-                    dev_obj.pump_state = False
-                db.add(db_models.PumpEvent(
-                    device_id="esp32-node-01",
-                    requested_state=False,
-                    confirmed_state=False,
-                    source="streamlit_manual",
-                    control_mode=latest_iot_data.get("control_mode", "MANUAL"),
-                    reason="Streamlit dashboard manual operator stop"
-                ))
-                db.commit()
-                add_notification("Irrigation Pump stopped via Streamlit.")
-                st.warning("Pump turned OFF!")
-                st.rerun()
-        
-        # Notification logger
-        st.markdown("### Operator Notifications Logs")
-        for log in st.session_state.notifications:
+        st.markdown("##### Operator Log Stream")
+        for log in st.session_state.notifications[:4]:
             st.markdown(f'<div class="notification-item">{log}</div>', unsafe_allow_html=True)
 
-# ----------------- CROP RECOMMENDATION MODULE -----------------
+
+# ----------------- 2. CROP RECOMMENDATION MODULE -----------------
 
 elif app_mode == "🌾 Crop Recommendation":
     st.subheader("Soil-Specific Crop Advisor Sandbox")
-    st.write("Tune the parameters below to compute crop suitability recommendations using the ML model.")
+    st.write("Tune the soil and microclimate parameters below to compute crop suitability recommendations using the ML model.")
 
     col1, col2 = st.columns([1, 1])
     
@@ -697,18 +819,16 @@ elif app_mode == "🌾 Crop Recommendation":
         
         st.markdown("---")
         st.markdown(f"""
-        <div class="glass-card" style="border-left: 5px solid #8a2be2; background: rgba(138, 43, 226, 0.05);">
-            <h4 style="margin: 0; color: #b19cd9; text-transform: uppercase; font-size: 0.8rem; letter-spacing:0.1em;">Engine Prediction Match</h4>
-            <h1 style="color: #ffffff; margin-top: 10px; margin-bottom: 12px; font-weight:800; font-size: 3rem;">{rec}</h1>
-            <p style="color: #e2d9eb; margin-bottom: 0; font-size: 0.95rem;">
-                Based on Nitrogen level of <b>{N}</b>, soil acidity pH <b>{ph}</b>, humidity <b>{hum}%</b> and rainfall of <b>{rain}mm</b>, 
+        <div class="botanical-card" style="border-left: 5px solid #254836;">
+            <div class="botanical-tag">Recommended Specimen</div>
+            <h1 style="font-family:'Newsreader', Georgia, serif; color: #192a21; margin: 8px 0; font-size: 2.8rem; font-weight:700;">{rec}</h1>
+            <p style="color: #4a5c52; margin-bottom: 0; font-size: 0.95rem;">
+                Based on Nitrogen level of <b>{N}</b>, soil pH <b>{ph}</b>, humidity <b>{hum}%</b> and rainfall of <b>{rain}mm</b>, 
                 the model suggests cultivating <b>{rec}</b>.
             </p>
         </div>
         """, unsafe_allow_html=True)
         
-        # Details about crops
-        st.subheader("Cultivation Best Practices")
         crop_details = {
             "Rice": "Requires high moisture (humidity > 75%) and rainfall > 150mm. Flooded cultivation or heavy clay soils are ideal.",
             "Potato": "Slightly acidic soil (pH < 6.0) is highly beneficial. Prefers cooler temperature ranges and well-draining soil.",
@@ -724,16 +844,14 @@ elif app_mode == "🌾 Crop Recommendation":
         detail = crop_details.get(rec, "Optimal growth guidelines: Maintain consistent NPK monitoring and automate irrigation schedules using live IoT controllers.")
         st.info(detail)
 
-# ----------------- LEAF DISEASE DIAGNOSIS (VISION) -----------------
+
+# ----------------- 3. LEAF DISEASE DIAGNOSIS (VISION) -----------------
 
 elif app_mode == "🍃 Leaf Disease Diagnosis":
     st.subheader("AI Vision Disease Detector")
     st.write("Upload a picture of a crop leaf to identify diseases and generate a tailored agronomic action plan.")
 
-    # Image upload widgets
     uploaded_file = st.file_uploader("Upload Leaf Snapshot (JPEG/PNG)", type=["jpg", "jpeg", "png"])
-    
-    # Lang selector for action plan translation
     language = st.selectbox("Preferred Communication Language", ["English", "Telugu", "Hindi", "Spanish", "French"])
 
     if uploaded_file is not None:
@@ -742,32 +860,27 @@ elif app_mode == "🍃 Leaf Disease Diagnosis":
         col_img, col_diag = st.columns([1, 1])
         
         with col_img:
-            st.image(image, caption="Uploaded Crop Image", use_container_width=True)
+            st.image(image, caption="Uploaded Crop Leaf", use_container_width=True)
             
         with col_diag:
             st.markdown("### Analysis Pipeline")
             
             with st.spinner("Analyzing image features via Gemini..."):
-                # Get raw byte content of image
                 uploaded_file.seek(0)
                 image_bytes = uploaded_file.read()
-                
-                # Execute detection
                 disease, confidence, bbox = detect_disease_from_image(image_bytes)
                 
             st.success("Diagnosis Complete!")
             st.markdown(f"""
-            <div class="glass-card" style="border-left: 5px solid #00ffc4; background: rgba(0, 255, 196, 0.03);">
-                <h5 style="margin: 0; color: #00ffc4; text-transform: uppercase;">Condition Identified</h5>
-                <h2 style="color: white; margin-top: 6px; font-weight: 700;">{disease}</h2>
-                <p style="margin: 0; color: #b19cd9;">Confidence: <b>{confidence*100:.1f}%</b></p>
+            <div class="botanical-card" style="border-left: 5px solid #254836;">
+                <div class="botanical-tag">Identified Condition</div>
+                <h2 style="font-family:'Newsreader', Georgia, serif; color: #192a21; margin: 4px 0; font-size:2.2rem; font-weight: 700;">{disease}</h2>
+                <p style="margin: 0; color: #73847a;">Confidence: <b>{confidence*100:.1f}%</b></p>
             </div>
             """, unsafe_allow_html=True)
             
-            # Action plan generator
             st.markdown("### Agronomic Action Plan")
             with st.spinner("Generating Action Plan..."):
-                # Call async action plan generator via asyncio
                 req = GenAIRequest(
                     crop="Leaf",
                     disease=disease,
@@ -785,53 +898,9 @@ elif app_mode == "🍃 Leaf Disease Diagnosis":
                 action_plan = run_async(generate_action_plan(req))
             
             st.markdown(action_plan)
-            
-            # Twilio SMS Alert section
-            st.markdown("---")
-            st.markdown("### SMS Operator Dispatcher")
-            st.write("Send this diagnosis and plan to the field operator's phone.")
-            
-            target_phone = st.text_input("Operator Phone Number", value=settings.TWILIO_TO_NUMBER or "+1234567890")
-            
-            if st.button("📲 Dispatch SMS Alert"):
-                if not settings.TWILIO_ACCOUNT_SID or not settings.TWILIO_AUTH_TOKEN:
-                    st.warning("Twilio is not configured. Please set TWILIO_ACCOUNT_SID and TWILIO_AUTH_TOKEN in `.env`.")
-                else:
-                    with st.spinner("Sending message..."):
-                        try:
-                            from twilio.rest import Client
-                            # Generate a short prompt for translations
-                            prompt = f"""
-                            You are an expert translator. Summarize this agricultural action plan in 1 short sentence in English, and then provide the exact translation in {language}.
-                            Disease: {disease}
-                            Plan: {action_plan}
-                            
-                            Format exactly like this:
-                            [EN] <english sentence>
-                            [{language[:2].upper()}] <translated sentence>
-                            """
-                            
-                            sms_body = f"Alert: {disease} detected."
-                            if client_model:
-                                resp = client_model.models.generate_content(
-                                    model="gemini-1.5-flash",
-                                    contents=prompt
-                                )
-                                if resp.text:
-                                    sms_body = resp.text.strip()
-                            
-                            client = Client(settings.TWILIO_ACCOUNT_SID, settings.TWILIO_AUTH_TOKEN)
-                            message = client.messages.create(
-                                body=f"KrishiNidhi Alert:\n{sms_body}",
-                                from_=settings.TWILIO_FROM_NUMBER,
-                                to=target_phone
-                            )
-                            st.success(f"SMS successfully dispatched! Message SID: {message.sid}")
-                            add_notification(f"SMS Alert sent to {target_phone} for {disease}")
-                        except Exception as ex:
-                            st.error(f"Failed to dispatch SMS: {ex}")
 
-# ----------------- KRISHINIDHI AI CHATBOT -----------------
+
+# ----------------- 4. KRISHINIDHI AI CHATBOT / ASSISTANT -----------------
 
 elif app_mode == "🤖 KrishiNidhi AI Chatbot":
     st.subheader("KrishiNidhi Agronomist Assistant")
@@ -849,7 +918,7 @@ elif app_mode == "🤖 KrishiNidhi AI Chatbot":
         c4.metric("Pump State", "ON" if latest_iot_data.get("pump_on", False) else "OFF")
 
     # Suggested Prompts
-    st.markdown("<p style='font-size:0.85rem; color:#b19cd9; margin-bottom:6px;'>Suggested Inquiries:</p>", unsafe_allow_html=True)
+    st.markdown("<p style='font-size:0.85rem; color:#4a5c52; margin-bottom:6px;'>Suggested Inquiries:</p>", unsafe_allow_html=True)
     suggested_cols = st.columns(3)
     suggested_query = None
     if lang_code == "te":
@@ -879,25 +948,20 @@ elif app_mode == "🤖 KrishiNidhi AI Chatbot":
     if "chat_history" not in st.session_state:
         st.session_state.chat_history = []
 
-    # Display prior messages
     for msg in st.session_state.chat_history:
         with st.chat_message(msg["role"]):
             st.write(msg["text"])
 
-    # User chat input
     user_input = st.chat_input("Enter your agriculture related question...")
     if suggested_query:
         user_input = suggested_query
 
     if user_input:
-        # Display user message
         with st.chat_message("user"):
             st.write(user_input)
             
-        # Append user message to history
         st.session_state.chat_history.append({"role": "user", "text": user_input})
         
-        # Prepare historical requests
         formatted_history = []
         assistant_messages = []
         for item in st.session_state.chat_history[:-1]:
@@ -911,11 +975,9 @@ elif app_mode == "🤖 KrishiNidhi AI Chatbot":
                     content=item["text"]
                 ))
             
-        # Generate chatbot reply
         with st.chat_message("assistant"):
             with st.spinner("KrishiNidhi is thinking..."):
                 reply = None
-                # Try Multilingual Assistant Service first
                 if assistant_answer_question and AssistantRequest and lang_code in ("en", "te", "hi"):
                     try:
                         req_obj = AssistantRequest(
@@ -927,7 +989,6 @@ elif app_mode == "🤖 KrishiNidhi AI Chatbot":
                     except (AssistantUnavailable, Exception):
                         reply = None
 
-                # Fallback to Gemini / PDF RAG
                 if not reply:
                     chat_req = ChatRequest(
                         message=user_input,
@@ -937,18 +998,14 @@ elif app_mode == "🤖 KrishiNidhi AI Chatbot":
                     try:
                         reply = run_async(generate_chat_response(chat_req))
                     except Exception as chat_err:
-                        st.error(f"Chat generation error: {chat_err}")
                         reply = "I apologize, but I am unable to connect to the assistant services at the moment."
                 
                 st.write(reply)
                 
-        # Append response to history
         st.session_state.chat_history.append({"role": "assistant", "text": reply})
         st.rerun()
 
-    # Clear chat session
     if st.sidebar.button("🗑️ Clear Chat History"):
         st.session_state.chat_history = []
         st.success("Chat history cleared!")
         st.rerun()
-

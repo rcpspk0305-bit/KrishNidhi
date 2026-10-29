@@ -24,9 +24,10 @@ This document specifies the exact physical wiring, power distribution, logic-lev
 | **16x2 LCD (I2C Module)** | GND | Black | **GND** | System Ground |
 | **16x2 LCD (I2C Module)** | SDA | Green | **D2 (GPIO 4)** | I2C Serial Data (3.3V Logic) |
 | **16x2 LCD (I2C Module)** | SCL | White | **D1 (GPIO 5)** | I2C Serial Clock (3.3V Logic) |
-| **Tactile Push Button** | Terminal 1 | Grey | **D0 (GPIO 16)** | Pulled High internally / Active-LOW |
-| **Tactile Push Button** | Terminal 2 | Black | **GND** | Ground Contact |
+| **Tactile Push Button** | Terminal 1 | Grey | **D0 (GPIO 16)** | External 10kΩ Pull-Up to 3.3V (Active-LOW) |
+| **Tactile Push Button** | Terminal 2 | Black | **GND** | System Ground Contact |
 | **5V DC Water Pump (+)**| Positive Wire | Red | **Relay NO (Normally Open)** | Switched 5V Rail |
+
 | **5V DC Water Pump (-)**| Negative Wire | Black | **GND** | Direct Ground Return |
 
 ---
@@ -84,7 +85,15 @@ This document specifies the exact physical wiring, power distribution, logic-lev
   - Connect the Red (+) wire of the submersible pump to **NO** (Normally Open).
   - When the relay is unpowered or in reset, the circuit is open and the pump cannot run.
 
+### 3.3 Push Button External Pull-Up (GPIO16 / D0)
+- Unlike other ESP8266 GPIO pins, **GPIO16 does not have an internal pull-up resistor** in standard MicroPython.
+- An **external 10kΩ pull-up resistor** must be connected between **D0 (GPIO16)** and the **3.3V** rail.
+- The tactile push button connects between **D0 (GPIO16)** and **GND**.
+- When the button is unpressed, the 10kΩ pull-up holds the pin solidly at 3.3V (`value() == 1`).
+- When the button is depressed, the pin is pulled to GND (`value() == 0`).
+
 ---
+
 
 ## 4. Hardware Assembly Checklist
 

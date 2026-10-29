@@ -17,41 +17,48 @@ async def lifespan(app: FastAPI):
     logger.info("Initializing database tables...")
     init_db()
     
-    # Pre-seed default demo device if none exists
+    # Pre-seed default demo devices if none exist
     try:
         from app.core.database import SessionLocal
         from app.core.security import hash_api_key
+        import os
+        dev_token = os.environ.get("DEVICE_TOKEN", "replace-with-a-long-random-secret")
         db = SessionLocal()
-        default_dev = db.query(db_models.Device).filter(db_models.Device.id == "esp8266-plant-01").first()
-        if not default_dev:
-            logger.info("Seeding default demo device 'esp8266-plant-01'...")
-            dev = db_models.Device(
-                id="esp8266-plant-01",
-                name="Main Indoor Greenhouse Planter",
-                api_key_hash=hash_api_key("default_secret_key_123"),
-                status="online",
-                control_mode="AUTO",
-                pump_state=False,
-            )
-            db.add(dev)
-            db.flush()
-            profile = db_models.PlantProfile(
-                device_id="esp8266-plant-01",
-                plant_name="Monstera Deliciosa",
-                plant_type="Tropical Foliage",
-                preferred_temp_min=18.0,
-                preferred_temp_max=30.0,
-                preferred_humidity_min=50.0,
-                preferred_humidity_max=75.0,
-                preferred_moisture_min=30.0,
-                preferred_moisture_max=60.0,
-            )
-            db.add(profile)
-            db.commit()
-            logger.info("Default device and plant profile seeded successfully.")
+        for d_id, d_name, d_key in [
+            ("esp8266-plant-01", "Main Indoor Greenhouse Planter", "default_secret_key_123"),
+            ("plant-01", "ESP8266 NodeMCU Planter", dev_token),
+        ]:
+            existing = db.query(db_models.Device).filter(db_models.Device.id == d_id).first()
+            if not existing:
+                logger.info(f"Seeding default device '{d_id}'...")
+                dev = db_models.Device(
+                    id=d_id,
+                    name=d_name,
+                    api_key_hash=hash_api_key(d_key),
+                    status="online",
+                    control_mode="AUTO",
+                    pump_state=False,
+                )
+                db.add(dev)
+                db.flush()
+                profile = db_models.PlantProfile(
+                    device_id=d_id,
+                    plant_name="Monstera Deliciosa",
+                    plant_type="Tropical Foliage",
+                    preferred_temp_min=18.0,
+                    preferred_temp_max=30.0,
+                    preferred_humidity_min=50.0,
+                    preferred_humidity_max=75.0,
+                    preferred_moisture_min=30.0,
+                    preferred_moisture_max=60.0,
+                )
+                db.add(profile)
+                db.commit()
+                logger.info(f"Device '{d_id}' and plant profile seeded successfully.")
         db.close()
     except Exception as e:
-        logger.warning(f"Could not seed default device: {e}")
+        logger.warning(f"Could not seed default devices: {e}")
+
 
     # Start MQTT background subscriber if configured
     try:
@@ -102,3 +109,24 @@ def root():
         "docs_url": "/docs",
         "api_v1_prefix": "/api/v1",
     }
+
+
+@app.get("/health")
+@app.get("/api/health")
+def health():
+    db_status = "connected"
+    try:
+        from app.core.database import SessionLocal
+        from sqlalchemy import text
+        db = SessionLocal()
+        db.execute(text("SELECT 1"))
+        db.close()
+    except Exception as e:
+        db_status = f"unhealthy: {e}"
+
+    return {
+        "status": "ok",
+        "database": db_status,
+        "version": "2.0.0",
+        "system": "AI-Powered Smart Plant Monitoring & Irrigation API",
+    }

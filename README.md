@@ -103,6 +103,7 @@ smart-plant-monitor/
 │   ├── architecture.md            # Detailed end-to-end data flow & sequence diagrams
 │   ├── hardware-connections.md    # Electrical schematics, logic levels & buck converter
 │   ├── api-documentation.md       # Full OpenAPI/Swagger endpoint specifications
+│   ├── running-commands.md        # Master CLI runbook for all subsystems & tests
 │   ├── deployment.md              # Local, Docker Compose & Nginx production setup
 │   └── testing.md                 # Test execution logs & hardware physical checklist
 │

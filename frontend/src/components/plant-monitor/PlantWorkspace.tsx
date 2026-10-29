@@ -28,11 +28,12 @@ interface Props {
 }
 
 export default function PlantWorkspace({
-  initialDeviceId = "esp8266-plant-01",
+  initialDeviceId = "plant-01",
 }: Props) {
   const { t, locale } = useLanguage();
 
-  const [deviceId] = useState<string>(initialDeviceId);
+  const [deviceId, setDeviceId] = useState<string>(initialDeviceId);
+
   const [telemetry, setTelemetry] = useState<PlantTelemetry | null>(null);
   const [history, setHistory] = useState<PlantTelemetry[]>([]);
   const [deviceStatus, setDeviceStatus] = useState<PlantDeviceStatus | null>(
@@ -197,11 +198,35 @@ export default function PlantWorkspace({
           </div>
 
           <div className="flex items-center gap-3 flex-wrap">
+            <div
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl border bg-white shadow-xs"
+              style={{ borderColor: "var(--border-subtle)" }}
+            >
+              <label
+                htmlFor="device-select"
+                className="text-[11px] font-semibold tracking-wider uppercase"
+                style={{ color: "var(--text-muted)" }}
+              >
+                {t("Device:")}
+              </label>
+              <select
+                id="device-select"
+                value={deviceId}
+                onChange={(e) => setDeviceId(e.target.value)}
+                className="text-xs font-semibold bg-transparent cursor-pointer outline-none"
+                style={{ color: "var(--forest-900)" }}
+              >
+                <option value="plant-01">plant-01 (ESP8266 Hardware)</option>
+                <option value="esp8266-plant-01">esp8266-plant-01 (Indoor Planter)</option>
+              </select>
+            </div>
+
             <DeviceStatusBadge
               status={deviceStatus}
               sseConnected={sseConnected}
               lastEventTime={lastEventTime}
             />
+
 
             <button
               type="button"

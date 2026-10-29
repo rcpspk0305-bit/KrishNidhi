@@ -60,6 +60,8 @@ tests/test_telemetry.py::test_get_telemetry_history PASSED               [100%]
    - Crop Recommendation Suitability Engine (soil & weather parameter inference)
    - Leaf Disease Diagnosis (multimodal Gemini vision and agronomic action plan)
    - AI Chatbot Assistant (multilingual agricultural RAG & history clearing)
+   - Smart Plant Sensor Monitoring (soil moisture %, PIR motion activity, irrigation pump control modes)
+   - Multilingual AI Assistant (English, Telugu, Hindi language switching & agronomic dialogue)
 
 ---
 

@@ -78,10 +78,10 @@ export default function TelemetryTrendsChart({
           </div>
         </div>
 
-        <div className="flex items-center gap-2 flex-wrap">
+        <div className="flex min-w-0 max-w-full items-center gap-2 flex-wrap">
           {/* Metric Filter Tabs */}
           <div
-            className="flex p-1 rounded-xl border"
+            className="flex min-w-0 max-w-full flex-wrap p-1 rounded-xl border"
             style={{
               backgroundColor: "var(--bg-subtle)",
               borderColor: "var(--border-subtle)",
