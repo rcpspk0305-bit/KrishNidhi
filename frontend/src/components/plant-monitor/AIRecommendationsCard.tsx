@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { Sparkles, CheckCircle, AlertTriangle, ShieldCheck, HelpCircle } from "lucide-react";
+import { Sparkles, CheckCircle, ShieldCheck, HelpCircle } from "lucide-react";
 import { PlantRecommendation } from "@/types/plant-monitor";
 
 interface Props {
@@ -11,89 +11,58 @@ interface Props {
 
 export default function AIRecommendationsCard({ recommendation, loading }: Props) {
   const observations = recommendation?.observations || [
-    "Soil moisture is within the healthy calibrated boundary.",
-    "Ambient temperature and humidity maintain optimal vapor pressure deficit.",
+    "Soil moisture levels remain safely within the calibrated root absorption zone.",
+    "Ambient temperature and relative humidity maintain optimal vapor pressure deficit (VPD).",
   ];
 
   const recommendations = recommendation?.recommendations || [
-    "Routine autonomous monitoring active. No intervention needed.",
+    "Autonomous telemetry monitoring remains active. No manual intervention required.",
   ];
 
   const severity = recommendation?.severity || "low";
   const aiExplanation = recommendation?.ai_explanation;
 
-  const severityColors = {
-    low: { bg: "rgba(16, 185, 129, 0.15)", text: "#10b981", border: "rgba(16, 185, 129, 0.3)" },
-    medium: { bg: "rgba(245, 158, 11, 0.15)", text: "#f59e0b", border: "rgba(245, 158, 11, 0.3)" },
-    high: { bg: "rgba(239, 68, 68, 0.15)", text: "#ef4444", border: "rgba(239, 68, 68, 0.3)" },
+  const getSeverityPill = (sev: string) => {
+    switch (sev.toLowerCase()) {
+      case "high":
+        return "pill-terracotta";
+      case "medium":
+        return "pill-gold";
+      default:
+        return "pill-forest";
+    }
   };
 
-  const currentSev = severityColors[severity] || severityColors.low;
-
   return (
-    <div
-      style={{
-        background: "rgba(15, 23, 42, 0.7)",
-        border: "1px solid rgba(255, 255, 255, 0.08)",
-        borderRadius: "20px",
-        padding: "24px",
-        display: "flex",
-        flexDirection: "column",
-        gap: "18px",
-      }}
-    >
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "10px" }}>
-        <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+    <div className={`botanical-card p-6 flex flex-col gap-5 bg-white transition-opacity ${loading ? "opacity-75" : "opacity-100"}`}>
+      {/* Card Header */}
+      <div className="flex justify-between items-center flex-wrap gap-3">
+        <div className="flex items-center gap-3">
           <div
+            className="p-2.5 rounded-xl border flex items-center justify-center"
             style={{
-              padding: "8px",
-              borderRadius: "10px",
-              background: "linear-gradient(135deg, rgba(34, 197, 94, 0.2), rgba(168, 85, 247, 0.2))",
-              color: "#a855f7",
+              backgroundColor: "var(--forest-50)",
+              borderColor: "var(--forest-100)",
+              color: "var(--forest-700)",
             }}
           >
             <Sparkles size={20} />
           </div>
           <div>
-            <h3 style={{ fontSize: "18px", fontWeight: 700, margin: 0, color: "#f8fafc" }}>
-              AI Plant Health Intelligence
-            </h3>
-            <span style={{ fontSize: "12px", color: "#64748b" }}>
-              Agronomic rule engine & natural language insights
+            <h3 className="title-md font-serif text-lg">Agronomic Health Intelligence</h3>
+            <span className="mono-tag block" style={{ color: "var(--text-muted)" }}>
+              Deterministic Rule Engine & Natural Language Insights
             </span>
           </div>
         </div>
 
-        <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-          <span
-            style={{
-              fontSize: "12px",
-              padding: "3px 10px",
-              borderRadius: "999px",
-              background: currentSev.bg,
-              color: currentSev.text,
-              border: `1px solid ${currentSev.border}`,
-              fontWeight: 600,
-              textTransform: "uppercase",
-            }}
-          >
-            Risk: {severity}
+        <div className="flex items-center gap-2">
+          <span className={getSeverityPill(severity)}>
+            <span className="uppercase text-[11px] font-semibold">Risk: {severity}</span>
           </span>
-          <span
-            style={{
-              fontSize: "12px",
-              padding: "3px 10px",
-              borderRadius: "999px",
-              background: "rgba(255, 255, 255, 0.05)",
-              color: "#94a3b8",
-              border: "1px solid rgba(255, 255, 255, 0.1)",
-              display: "flex",
-              alignItems: "center",
-              gap: "4px",
-            }}
-          >
-            <ShieldCheck size={12} color="#10b981" />
-            95% Confidence
+          <span className="pill-forest">
+            <ShieldCheck size={12} className="text-forest-700" />
+            <span className="text-[11px]">95% Confidence</span>
           </span>
         </div>
       </div>
@@ -101,66 +70,66 @@ export default function AIRecommendationsCard({ recommendation, loading }: Props
       {/* AI Contextual Explanation Box */}
       {aiExplanation && (
         <div
+          className="p-4 rounded-xl border text-sm leading-relaxed"
           style={{
-            background: "rgba(168, 85, 247, 0.08)",
-            border: "1px solid rgba(168, 85, 247, 0.2)",
-            borderRadius: "14px",
-            padding: "16px",
-            color: "#e2e8f0",
-            fontSize: "13px",
-            lineHeight: 1.6,
+            backgroundColor: "var(--bg-subtle)",
+            borderColor: "var(--border-subtle)",
+            color: "var(--text-primary)",
           }}
         >
-          <div style={{ display: "flex", alignItems: "center", gap: "6px", color: "#c084fc", fontWeight: 600, marginBottom: "6px" }}>
-            <Sparkles size={14} /> Natural Language Agronomist Summary
+          <div className="flex items-center gap-1.5 font-semibold text-xs mb-1.5" style={{ color: "var(--forest-700)" }}>
+            <Sparkles size={13} />
+            <span>Agronomist Summary</span>
           </div>
-          {aiExplanation}
+          <p className="font-sans text-xs md:text-sm">{aiExplanation}</p>
         </div>
       )}
 
-      {/* Specific Health Dimension Assessments (Section 4) */}
-      <div
-        style={{
-          display: "grid",
-          gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))",
-          gap: "10px",
-        }}
-      >
-        <div style={{ background: "rgba(0,0,0,0.2)", padding: "10px 14px", borderRadius: "10px", border: "1px solid rgba(255,255,255,0.05)" }}>
-          <span style={{ fontSize: "11px", color: "#64748b", display: "block" }}>Environmental Condition</span>
-          <strong style={{ fontSize: "13px", color: "#e2e8f0" }}>{recommendation?.environmental_condition || "Nominal Indoor"}</strong>
+      {/* Four Dimension Assessments */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-2.5">
+        <div className="p-3 rounded-lg border text-xs" style={{ backgroundColor: "var(--bg-subtle)", borderColor: "var(--border-subtle)" }}>
+          <span className="block text-[11px]" style={{ color: "var(--text-muted)" }}>Environment</span>
+          <strong className="block mt-0.5 truncate" style={{ color: "var(--text-primary)" }}>
+            {recommendation?.environmental_condition || "Nominal Indoor"}
+          </strong>
         </div>
-        <div style={{ background: "rgba(0,0,0,0.2)", padding: "10px 14px", borderRadius: "10px", border: "1px solid rgba(255,255,255,0.05)" }}>
-          <span style={{ fontSize: "11px", color: "#64748b", display: "block" }}>Moisture Assessment</span>
-          <strong style={{ fontSize: "13px", color: "#10b981" }}>{recommendation?.moisture_assessment || "Optimal range"}</strong>
+
+        <div className="p-3 rounded-lg border text-xs" style={{ backgroundColor: "var(--bg-subtle)", borderColor: "var(--border-subtle)" }}>
+          <span className="block text-[11px]" style={{ color: "var(--text-muted)" }}>Soil Moisture</span>
+          <strong className="block mt-0.5 truncate" style={{ color: "var(--forest-700)" }}>
+            {recommendation?.moisture_assessment || "Optimal Zone"}
+          </strong>
         </div>
-        <div style={{ background: "rgba(0,0,0,0.2)", padding: "10px 14px", borderRadius: "10px", border: "1px solid rgba(255,255,255,0.05)" }}>
-          <span style={{ fontSize: "11px", color: "#64748b", display: "block" }}>Temperature Assessment</span>
-          <strong style={{ fontSize: "13px", color: "#f43f5e" }}>{recommendation?.temperature_assessment || "Optimal microclimate"}</strong>
+
+        <div className="p-3 rounded-lg border text-xs" style={{ backgroundColor: "var(--bg-subtle)", borderColor: "var(--border-subtle)" }}>
+          <span className="block text-[11px]" style={{ color: "var(--text-muted)" }}>Temperature</span>
+          <strong className="block mt-0.5 truncate" style={{ color: "var(--terracotta-700)" }}>
+            {recommendation?.temperature_assessment || "Thermal Comfort"}
+          </strong>
         </div>
-        <div style={{ background: "rgba(0,0,0,0.2)", padding: "10px 14px", borderRadius: "10px", border: "1px solid rgba(255,255,255,0.05)" }}>
-          <span style={{ fontSize: "11px", color: "#64748b", display: "block" }}>Humidity Assessment</span>
-          <strong style={{ fontSize: "13px", color: "#38bdf8" }}>{recommendation?.humidity_assessment || "Balanced VPD"}</strong>
+
+        <div className="p-3 rounded-lg border text-xs" style={{ backgroundColor: "var(--bg-subtle)", borderColor: "var(--border-subtle)" }}>
+          <span className="block text-[11px]" style={{ color: "var(--text-muted)" }}>Humidity</span>
+          <strong className="block mt-0.5 truncate" style={{ color: "var(--dew-700)" }}>
+            {recommendation?.humidity_assessment || "Balanced VPD"}
+          </strong>
         </div>
       </div>
 
-      {/* Observations and Recommendations Columns */}
-      <div
-        style={{
-          display: "grid",
-          gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))",
-          gap: "16px",
-        }}
-      >
+      {/* Two Columns: Observations & Recommendations */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         {/* Real-time Observations */}
-        <div style={{ background: "rgba(0, 0, 0, 0.25)", padding: "16px", borderRadius: "14px", border: "1px solid rgba(255, 255, 255, 0.04)" }}>
-          <h4 style={{ fontSize: "13px", fontWeight: 700, color: "#94a3b8", margin: "0 0 12px 0", textTransform: "uppercase" }}>
-            Real-Time Observations
+        <div
+          className="p-4 rounded-xl border flex flex-col gap-2.5"
+          style={{ backgroundColor: "var(--surface-inset)", borderColor: "var(--border-subtle)" }}
+        >
+          <h4 className="mono-tag font-semibold uppercase tracking-wider text-xs" style={{ color: "var(--text-secondary)" }}>
+            Telemetry Observations
           </h4>
-          <ul style={{ listStyle: "none", padding: 0, margin: 0, display: "flex", flexDirection: "column", gap: "10px" }}>
+          <ul className="flex flex-col gap-2 text-xs" style={{ color: "var(--text-secondary)" }}>
             {observations.map((obs, idx) => (
-              <li key={idx} style={{ display: "flex", alignItems: "flex-start", gap: "8px", fontSize: "13px", color: "#cbd5e1" }}>
-                <span style={{ color: "#38bdf8", marginTop: "2px" }}>&bull;</span>
+              <li key={idx} className="flex items-start gap-2">
+                <span className="mt-0.5" style={{ color: "var(--forest-600)" }}>&bull;</span>
                 <span>{obs}</span>
               </li>
             ))}
@@ -168,14 +137,17 @@ export default function AIRecommendationsCard({ recommendation, loading }: Props
         </div>
 
         {/* Actionable Next Steps */}
-        <div style={{ background: "rgba(0, 0, 0, 0.25)", padding: "16px", borderRadius: "14px", border: "1px solid rgba(255, 255, 255, 0.04)" }}>
-          <h4 style={{ fontSize: "13px", fontWeight: 700, color: "#94a3b8", margin: "0 0 12px 0", textTransform: "uppercase" }}>
-            Suggested Actions
+        <div
+          className="p-4 rounded-xl border flex flex-col gap-2.5"
+          style={{ backgroundColor: "var(--surface-inset)", borderColor: "var(--border-subtle)" }}
+        >
+          <h4 className="mono-tag font-semibold uppercase tracking-wider text-xs" style={{ color: "var(--text-secondary)" }}>
+            Prescribed Next Steps
           </h4>
-          <ul style={{ listStyle: "none", padding: 0, margin: 0, display: "flex", flexDirection: "column", gap: "10px" }}>
+          <ul className="flex flex-col gap-2 text-xs" style={{ color: "var(--text-secondary)" }}>
             {recommendations.map((rec, idx) => (
-              <li key={idx} style={{ display: "flex", alignItems: "flex-start", gap: "8px", fontSize: "13px", color: "#cbd5e1" }}>
-                <CheckCircle size={15} color="#22c55e" style={{ flexShrink: 0, marginTop: "2px" }} />
+              <li key={idx} className="flex items-start gap-2">
+                <CheckCircle size={14} className="shrink-0 mt-0.5 text-forest-600" />
                 <span>{rec}</span>
               </li>
             ))}
@@ -183,9 +155,10 @@ export default function AIRecommendationsCard({ recommendation, loading }: Props
         </div>
       </div>
 
-      <div style={{ fontSize: "11px", color: "#64748b", display: "flex", alignItems: "center", gap: "5px" }}>
-        <HelpCircle size={12} />
-        {recommendation?.limitations || "Guidance grounded in microclimate metrics. LLM operates strictly in advisory capacity."}
+      {/* Advisory Notice */}
+      <div className="flex items-center gap-1.5 text-xs pt-2 border-t" style={{ borderColor: "var(--border-subtle)", color: "var(--text-muted)" }}>
+        <HelpCircle size={12} className="shrink-0" />
+        <span>{recommendation?.limitations || "Telemetry-grounded agronomic rules. LLM operates strictly in advisory capacity."}</span>
       </div>
     </div>
   );

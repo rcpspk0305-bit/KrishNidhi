@@ -16,7 +16,8 @@ export const summaryCards = (data: typeof mockFieldData) => [
   { label: "Growth Index", value: "High" },
 ];
 
-export const buildSeries = (id: string, current: any) => {
-  const seed = current[id as keyof typeof current] || 25;
-  return Array.from({ length: 24 }, (_, i) => seed + Math.sin(i / 2) * 2 + (Math.random() - 0.5));
+export const buildSeries = (id: string, current: Record<string, number | string>) => {
+  const raw = current[id];
+  const seed = typeof raw === "number" ? raw : 25;
+  return Array.from({ length: 24 }, (_, i) => seed + Math.sin(i / 2) * 2 + (((i * 7) % 10) - 5) * 0.1);
 };

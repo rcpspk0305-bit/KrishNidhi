@@ -6,8 +6,15 @@ import { PlantTelemetry } from "@/types/plant-monitor";
 interface SSEOptions {
   deviceId: string;
   onTelemetry?: (data: PlantTelemetry) => void;
-  onPumpStateUpdated?: (data: { confirmed_state: boolean; control_mode: string; timestamp?: string; command_id?: string }) => void;
-  onCommandCreated?: (data: any) => void;
+  onPumpStateUpdated?: (data: {
+    confirmed_state: boolean;
+    control_mode: string;
+    timestamp?: string;
+    command_id?: string;
+    status?: string;
+    reason?: string;
+  }) => void;
+  onCommandCreated?: (data: unknown) => void;
 }
 
 export function usePlantMonitorSSE({
@@ -20,11 +27,22 @@ export function usePlantMonitorSSE({
   const [lastEventTime, setLastEventTime] = useState<Date | null>(null);
   const eventSourceRef = useRef<EventSource | null>(null);
   const reconnectTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const callbacks = useRef({
+    onTelemetry,
+    onPumpStateUpdated,
+    onCommandCreated,
+  });
+
+  useEffect(() => {
+    callbacks.current = { onTelemetry, onPumpStateUpdated, onCommandCreated };
+  }, [onTelemetry, onPumpStateUpdated, onCommandCreated]);
+  const connectRef = useRef<() => void>(() => {});
 
   const connect = useCallback(() => {
     if (typeof window === "undefined") return;
 
-    const apiBase = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api/v1";
+    const apiBase =
+      process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api/v1";
     const sseUrl = `${apiBase}/devices/${deviceId}/events`;
 
     try {
@@ -43,8 +61,8 @@ export function usePlantMonitorSSE({
         try {
           const parsed = JSON.parse(event.data);
           setLastEventTime(new Date());
-          if (onTelemetry && parsed.data) {
-            onTelemetry(parsed.data);
+          if (parsed.device_id === deviceId && parsed.data) {
+            callbacks.current.onTelemetry?.(parsed.data);
           }
         } catch (err) {
           console.error("Failed to parse telemetry SSE event", err);
@@ -55,8 +73,8 @@ export function usePlantMonitorSSE({
         try {
           const parsed = JSON.parse(event.data);
           setLastEventTime(new Date());
-          if (onPumpStateUpdated && parsed.data) {
-            onPumpStateUpdated(parsed.data);
+          if (parsed.device_id === deviceId && parsed.data) {
+            callbacks.current.onPumpStateUpdated?.(parsed.data);
           }
         } catch (err) {
           console.error("Failed to parse pump state SSE event", err);
@@ -67,8 +85,8 @@ export function usePlantMonitorSSE({
         try {
           const parsed = JSON.parse(event.data);
           setLastEventTime(new Date());
-          if (onCommandCreated && parsed.data) {
-            onCommandCreated(parsed.data);
+          if (parsed.device_id === deviceId && parsed.data) {
+            callbacks.current.onCommandCreated?.(parsed.data);
           }
         } catch (err) {
           console.error("Failed to parse command created SSE event", err);
@@ -78,19 +96,20 @@ export function usePlantMonitorSSE({
       es.onerror = () => {
         setIsConnected(false);
         es.close();
-        // Exponential reconnect attempt after 4 seconds
-        if (reconnectTimeoutRef.current) clearTimeout(reconnectTimeoutRef.current);
+        // Retry after four seconds; REST polling covers disconnections.
+        if (reconnectTimeoutRef.current)
+          clearTimeout(reconnectTimeoutRef.current);
         reconnectTimeoutRef.current = setTimeout(() => {
-          connect();
+          connectRef.current();
         }, 4000);
       };
     } catch (e) {
       console.warn("EventSource creation error", e);
-      setIsConnected(false);
     }
-  }, [deviceId, onTelemetry, onPumpStateUpdated, onCommandCreated]);
+  }, [deviceId]);
 
   useEffect(() => {
+    connectRef.current = connect;
     connect();
 
     return () => {

@@ -6,13 +6,10 @@ import {
   Search, 
   ArrowLeft, 
   Landmark, 
-  ChevronRight, 
-  Filter, 
   TrendingUp, 
   Users, 
   Calendar,
   ExternalLink,
-  Navigation
 } from "lucide-react";
 import Link from "next/link";
 

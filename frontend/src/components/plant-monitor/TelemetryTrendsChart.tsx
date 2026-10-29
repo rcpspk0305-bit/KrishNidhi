@@ -35,54 +35,54 @@ export default function TelemetryTrendsChart({ data, onRefresh, loading }: Props
   });
 
   return (
-    <div
-      style={{
-        background: "rgba(15, 23, 42, 0.7)",
-        border: "1px solid rgba(255, 255, 255, 0.08)",
-        borderRadius: "20px",
-        padding: "24px",
-        display: "flex",
-        flexDirection: "column",
-        gap: "18px",
-      }}
-    >
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "12px" }}>
-        <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
-          <div style={{ padding: "8px", borderRadius: "10px", background: "rgba(34, 197, 94, 0.15)", color: "#22c55e" }}>
+    <div className="botanical-card p-6 flex flex-col gap-4 bg-white">
+      {/* Chart Header & Controls */}
+      <div className="flex justify-between items-center flex-wrap gap-3">
+        <div className="flex items-center gap-3">
+          <div
+            className="p-2.5 rounded-xl border flex items-center justify-center"
+            style={{
+              backgroundColor: "var(--forest-50)",
+              borderColor: "var(--forest-100)",
+              color: "var(--forest-700)",
+            }}
+          >
             <TrendingUp size={20} />
           </div>
           <div>
-            <h3 style={{ fontSize: "18px", fontWeight: 700, margin: 0, color: "#f8fafc" }}>
-              Environmental Telemetry Trends
-            </h3>
-            <span style={{ fontSize: "12px", color: "#64748b" }}>
-              Continuous chronological sensor log from ESP8266
+            <h3 className="title-md font-serif text-lg">Environmental Telemetry Trends</h3>
+            <span className="mono-tag block" style={{ color: "var(--text-muted)" }}>
+              Chronological Microclimate Log from NodeMCU
             </span>
           </div>
         </div>
 
-        <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
-          {/* Metric filter buttons */}
-          <div style={{ display: "flex", background: "rgba(0, 0, 0, 0.3)", padding: "3px", borderRadius: "10px", border: "1px solid rgba(255, 255, 255, 0.05)" }}>
-            {(["all", "soil", "temp", "humidity", "pump"] as const).map((filter) => (
-              <button
-                key={filter}
-                type="button"
-                onClick={() => setSelectedMetric(filter)}
-                style={{
-                  padding: "4px 10px",
-                  borderRadius: "6px",
-                  border: "none",
-                  background: selectedMetric === filter ? "rgba(34, 197, 94, 0.2)" : "transparent",
-                  color: selectedMetric === filter ? "#4ade80" : "#94a3b8",
-                  fontSize: "12px",
-                  fontWeight: selectedMetric === filter ? 600 : 400,
-                  cursor: "pointer",
-                }}
-              >
-                {filter.toUpperCase()}
-              </button>
-            ))}
+        <div className="flex items-center gap-2 flex-wrap">
+          {/* Metric Filter Tabs */}
+          <div
+            className="flex p-1 rounded-xl border"
+            style={{ backgroundColor: "var(--bg-subtle)", borderColor: "var(--border-subtle)" }}
+          >
+            {(["all", "soil", "temp", "humidity", "pump"] as const).map((filter) => {
+              const isSelected = selectedMetric === filter;
+              return (
+                <button
+                  key={filter}
+                  type="button"
+                  onClick={() => setSelectedMetric(filter)}
+                  className="py-1 px-2.5 text-xs font-semibold rounded-lg transition-all uppercase"
+                  style={{
+                    backgroundColor: isSelected ? "#ffffff" : "transparent",
+                    color: isSelected ? "var(--forest-800)" : "var(--text-muted)",
+                    boxShadow: isSelected ? "var(--shadow-sm)" : "none",
+                    border: isSelected ? "1px solid var(--border-default)" : "1px solid transparent",
+                    cursor: "pointer",
+                  }}
+                >
+                  {filter}
+                </button>
+              );
+            })}
           </div>
 
           {onRefresh && (
@@ -90,55 +90,65 @@ export default function TelemetryTrendsChart({ data, onRefresh, loading }: Props
               type="button"
               onClick={onRefresh}
               disabled={loading}
-              style={{
-                background: "rgba(255, 255, 255, 0.05)",
-                border: "1px solid rgba(255, 255, 255, 0.1)",
-                color: "#e2e8f0",
-                padding: "6px 12px",
-                borderRadius: "8px",
-                fontSize: "12px",
-                fontWeight: 500,
-                cursor: loading ? "not-allowed" : "pointer",
-                display: "flex",
-                alignItems: "center",
-                gap: "6px",
-              }}
+              className="btn-secondary text-xs py-1.5 px-3"
             >
               <RefreshCw size={12} className={loading ? "animate-spin" : ""} />
-              {loading ? "Syncing..." : "Sync"}
+              <span>{loading ? "Syncing..." : "Sync"}</span>
             </button>
           )}
         </div>
       </div>
 
+      {/* Chart Canvas */}
       {formattedData.length === 0 ? (
-        <div style={{ height: "260px", display: "flex", alignItems: "center", justifyContent: "center", color: "#64748b", fontSize: "14px" }}>
+        <div
+          className="h-64 flex items-center justify-center rounded-xl border text-xs"
+          style={{
+            backgroundColor: "var(--bg-subtle)",
+            borderColor: "var(--border-subtle)",
+            color: "var(--text-muted)",
+          }}
+        >
           No historical telemetry points found. Telemetry will plot here once received from ESP8266.
         </div>
       ) : (
-        <div style={{ width: "100%", height: "280px" }}>
+        <div className="w-full h-72">
           <ResponsiveContainer width="100%" height="100%">
             <LineChart data={formattedData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
-              <CartesianGrid strokeDasharray="3 3" stroke="rgba(255, 255, 255, 0.05)" />
-              <XAxis dataKey="time" stroke="#64748b" fontSize={11} tickLine={false} />
-              <YAxis stroke="#64748b" fontSize={11} domain={[0, 100]} tickLine={false} />
+              <CartesianGrid strokeDasharray="3 3" stroke="rgba(25, 42, 33, 0.08)" />
+              <XAxis
+                dataKey="time"
+                stroke="var(--text-muted)"
+                fontSize={11}
+                tickLine={false}
+                axisLine={{ stroke: "rgba(25, 42, 33, 0.12)" }}
+              />
+              <YAxis
+                stroke="var(--text-muted)"
+                fontSize={11}
+                domain={[0, 100]}
+                tickLine={false}
+                axisLine={{ stroke: "rgba(25, 42, 33, 0.12)" }}
+              />
               <Tooltip
                 contentStyle={{
-                  backgroundColor: "rgba(15, 23, 42, 0.95)",
-                  borderColor: "rgba(255, 255, 255, 0.1)",
+                  backgroundColor: "#ffffff",
+                  borderColor: "rgba(25, 42, 33, 0.14)",
                   borderRadius: "12px",
+                  boxShadow: "0 4px 16px rgba(25, 42, 33, 0.08)",
                   fontSize: "12px",
-                  color: "#f8fafc",
+                  color: "var(--text-primary)",
+                  fontFamily: "var(--font-sans)",
                 }}
               />
-              <Legend wrapperStyle={{ fontSize: "12px", paddingTop: "10px" }} />
+              <Legend wrapperStyle={{ fontSize: "12px", paddingTop: "8px" }} />
 
               {(selectedMetric === "all" || selectedMetric === "soil") && (
                 <Line
                   type="monotone"
                   dataKey="soil_moisture"
                   name="Soil Moisture (%)"
-                  stroke="#10b981"
+                  stroke="#254836"
                   strokeWidth={2.5}
                   dot={false}
                   activeDot={{ r: 5 }}
@@ -149,7 +159,7 @@ export default function TelemetryTrendsChart({ data, onRefresh, loading }: Props
                   type="monotone"
                   dataKey="temperature"
                   name="Temperature (°C)"
-                  stroke="#f43f5e"
+                  stroke="#bd5134"
                   strokeWidth={2}
                   dot={false}
                   activeDot={{ r: 4 }}
@@ -160,7 +170,7 @@ export default function TelemetryTrendsChart({ data, onRefresh, loading }: Props
                   type="monotone"
                   dataKey="humidity"
                   name="Humidity (% RH)"
-                  stroke="#3b82f6"
+                  stroke="#31778c"
                   strokeWidth={2}
                   dot={false}
                   activeDot={{ r: 4 }}
@@ -170,8 +180,8 @@ export default function TelemetryTrendsChart({ data, onRefresh, loading }: Props
                 <Line
                   type="stepAfter"
                   dataKey="pump_active"
-                  name="Pump Usage Active (0/100%)"
-                  stroke="#f59e0b"
+                  name="Pump Relay Active (0/100%)"
+                  stroke="#b07c1e"
                   strokeWidth={2}
                   strokeDasharray="4 4"
                   dot={false}

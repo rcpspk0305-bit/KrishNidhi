@@ -1,9 +1,10 @@
 "use client";
 
-import { useState } from "react";
+import React, { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Lock, Phone, ArrowRight, Sprout, Loader2 } from "lucide-react";
 import { motion } from "framer-motion";
+import Link from "next/link";
 
 export default function LoginPage() {
   const [mobile, setMobile] = useState("");
@@ -21,80 +22,120 @@ export default function LoginPage() {
     setTimeout(() => {
       if (mobile === "9999999999" && password === "krishi123") {
         localStorage.setItem("auth_token", "ps10_authenticated");
-        router.push("/dashboard");
+        router.push("/plant-monitor");
       } else {
         setError("Invalid credentials. Try 9999999999 / krishi123");
         setLoading(false);
       }
-    }, 1500);
+    }, 1200);
   };
 
   return (
-    <main className="section" style={{ minHeight: "100vh", display: "grid", placeItems: "center" }}>
-      <motion.div 
-        initial={{ opacity: 0, y: 20 }}
+    <main className="section flex items-center justify-center p-4" style={{ backgroundColor: "var(--bg-canvas)" }}>
+      <motion.div
+        initial={{ opacity: 0, y: 15 }}
         animate={{ opacity: 1, y: 0 }}
-        className="content-card glass" 
-        style={{ width: "100%", maxWidth: 440, padding: 40, borderRadius: 32 }}
+        className="botanical-card p-8 md:p-10 w-full max-w-md bg-white flex flex-col gap-6"
       >
-        <div style={{ textAlign: "center", marginBottom: 32 }}>
-          <div style={{ display: "inline-flex", padding: 16, background: "rgba(0, 209, 102, 0.1)", borderRadius: 20, marginBottom: 16 }}>
-            <Sprout size={32} color="#00d166" />
+        <div className="text-center">
+          <div
+            className="inline-flex p-3 rounded-2xl border mb-3"
+            style={{
+              backgroundColor: "var(--forest-50)",
+              borderColor: "var(--forest-100)",
+              color: "var(--forest-700)",
+            }}
+          >
+            <Sprout size={28} />
           </div>
-          <h1 className="title-lg">KrishiNidhi Login</h1>
-          <p className="muted">Enter your registered mobile to access God-Mode</p>
+          <h1 className="title-md font-serif text-2xl font-bold" style={{ color: "var(--forest-900)" }}>
+            KrishiNidhi Station Login
+          </h1>
+          <p className="text-xs mt-1" style={{ color: "var(--text-secondary)" }}>
+            Enter your credentials to access the plant monitoring console
+          </p>
         </div>
 
-        <form onSubmit={handleLogin} style={{ display: "grid", gap: 20 }}>
-          <div className="input-group">
-            <label className="muted" style={{ fontSize: 12, marginBottom: 8, display: "block" }}>MOBILE NUMBER</label>
-            <div className="glass" style={{ display: "flex", alignItems: "center", padding: "0 16px", borderRadius: 16, border: "1px solid rgba(255,255,255,0.05)" }}>
-              <Phone size={18} className="muted" />
-              <input 
-                type="tel" 
+        <form onSubmit={handleLogin} className="flex flex-col gap-4">
+          <div>
+            <label className="mono-tag font-semibold block mb-1.5" style={{ color: "var(--text-secondary)" }}>
+              MOBILE NUMBER
+            </label>
+            <div
+              className="flex items-center px-3.5 rounded-xl border bg-white focus-within:ring-2 focus-within:ring-forest-600"
+              style={{ borderColor: "var(--border-default)" }}
+            >
+              <Phone size={16} style={{ color: "var(--text-muted)" }} />
+              <input
+                type="tel"
                 placeholder="9999999999"
                 value={mobile}
                 onChange={(e) => setMobile(e.target.value)}
-                style={{ background: "transparent", border: "none", color: "white", padding: "16px", outline: "none", width: "100%" }}
+                className="w-full py-3 px-3 text-sm bg-transparent outline-none"
+                style={{ color: "var(--text-primary)" }}
                 required
               />
             </div>
           </div>
 
-          <div className="input-group">
-            <label className="muted" style={{ fontSize: 12, marginBottom: 8, display: "block" }}>PASSWORD</label>
-            <div className="glass" style={{ display: "flex", alignItems: "center", padding: "0 16px", borderRadius: 16, border: "1px solid rgba(255,255,255,0.05)" }}>
-              <Lock size={18} className="muted" />
-              <input 
-                type="password" 
+          <div>
+            <label className="mono-tag font-semibold block mb-1.5" style={{ color: "var(--text-secondary)" }}>
+              PASSWORD
+            </label>
+            <div
+              className="flex items-center px-3.5 rounded-xl border bg-white focus-within:ring-2 focus-within:ring-forest-600"
+              style={{ borderColor: "var(--border-default)" }}
+            >
+              <Lock size={16} style={{ color: "var(--text-muted)" }} />
+              <input
+                type="password"
                 placeholder="••••••••"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                style={{ background: "transparent", border: "none", color: "white", padding: "16px", outline: "none", width: "100%" }}
+                className="w-full py-3 px-3 text-sm bg-transparent outline-none"
+                style={{ color: "var(--text-primary)" }}
                 required
               />
             </div>
           </div>
 
           {error && (
-            <motion.div 
-              initial={{ scale: 0.9 }} 
-              animate={{ scale: 1 }} 
-              className="badge" 
-              style={{ background: "rgba(251, 113, 133, 0.1)", color: "#fb7185", borderColor: "rgba(251, 113, 133, 0.1)", textAlign: "center", width: "100%" }}
+            <div
+              className="p-3 rounded-xl border text-xs text-center font-medium"
+              style={{
+                backgroundColor: "var(--terracotta-50)",
+                borderColor: "rgba(189, 81, 52, 0.2)",
+                color: "var(--terracotta-700)",
+              }}
             >
               {error}
-            </motion.div>
+            </div>
           )}
 
-          <button className="cta" type="submit" disabled={loading} style={{ width: "100%", padding: 18, marginTop: 12 }}>
-            {loading ? <Loader2 className="animate-spin" /> : <>Sign In <ArrowRight size={18} style={{ marginLeft: 8 }} /></>}
+          <button
+            type="submit"
+            disabled={loading}
+            className="btn-primary w-full py-3 mt-2"
+          >
+            {loading ? (
+              <Loader2 size={16} className="animate-spin" />
+            ) : (
+              <>
+                <span>Sign In to Console</span>
+                <ArrowRight size={16} />
+              </>
+            )}
           </button>
         </form>
 
-        <p className="muted" style={{ textAlign: "center", marginTop: 24, fontSize: 14 }}>
-          Don't have an account? <span style={{ color: "var(--primary)" }}>Contact Admin</span>
-        </p>
+        <div className="text-center text-xs pt-4 border-t flex flex-col gap-2" style={{ borderColor: "var(--border-subtle)", color: "var(--text-muted)" }}>
+          <p>
+            Demo credentials: <span className="mono-tag font-bold" style={{ color: "var(--forest-700)" }}>9999999999 / krishi123</span>
+          </p>
+          <Link href="/" className="font-semibold underline hover:text-forest-800" style={{ color: "var(--forest-700)" }}>
+            Return to Homepage
+          </Link>
+        </div>
       </motion.div>
     </main>
   );

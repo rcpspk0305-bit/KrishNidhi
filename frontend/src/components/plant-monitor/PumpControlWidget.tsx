@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
-import { Power, ShieldAlert, Cpu, CheckCircle2, Clock, Loader2, Info } from "lucide-react";
+import { Power, ShieldAlert, CheckCircle2, Clock, Loader2, Sparkles } from "lucide-react";
 import { plantApi } from "@/lib/plant-api";
 
 interface Props {
@@ -28,13 +28,14 @@ export default function PumpControlWidget({
   const handleModeChange = async (newMode: "AUTO" | "MANUAL" | "OFF") => {
     if (newMode === currentMode) return;
     setSubmitting(true);
-    setPendingAction(`Switching mode to ${newMode}`);
+    setPendingAction(`Switching operating mode to ${newMode}`);
     setErrorMsg(null);
     try {
       await plantApi.requestPumpControl(deviceId, "SET_MODE", newMode);
       if (onCommandDispatched) onCommandDispatched();
-    } catch (err: any) {
-      setErrorMsg(err.response?.data?.detail || "Failed to switch mode");
+    } catch (err: unknown) {
+      const errorObj = err as { response?: { data?: { detail?: string } }; message?: string };
+      setErrorMsg(errorObj.response?.data?.detail || errorObj.message || "Failed to switch mode");
     } finally {
       setSubmitting(false);
       setTimeout(() => setPendingAction(null), 3000);
@@ -43,18 +44,19 @@ export default function PumpControlWidget({
 
   const handleTogglePump = async () => {
     if (currentMode !== "MANUAL") {
-      setErrorMsg("Manual pump toggle is only available in MANUAL mode. Switch mode first.");
+      setErrorMsg("Manual pump actuation is restricted to MANUAL mode. Please switch modes first.");
       return;
     }
     const targetState = !confirmedPumpOn;
     setSubmitting(true);
-    setPendingAction(`Commanding pump ${targetState ? "ON" : "OFF"}`);
+    setPendingAction(`Commanding pump relay ${targetState ? "ON" : "OFF"}`);
     setErrorMsg(null);
     try {
       await plantApi.requestPumpControl(deviceId, "SET_PUMP", targetState);
       if (onCommandDispatched) onCommandDispatched();
-    } catch (err: any) {
-      setErrorMsg(err.response?.data?.detail || "Failed to submit pump command");
+    } catch (err: unknown) {
+      const errorObj = err as { response?: { data?: { detail?: string } }; message?: string };
+      setErrorMsg(errorObj.response?.data?.detail || errorObj.message || "Failed to submit pump command");
     } finally {
       setSubmitting(false);
       setTimeout(() => setPendingAction(null), 3000);
@@ -62,132 +64,83 @@ export default function PumpControlWidget({
   };
 
   return (
-    <div
-      style={{
-        background: "rgba(15, 23, 42, 0.7)",
-        border: "1px solid rgba(255, 255, 255, 0.08)",
-        borderRadius: "20px",
-        padding: "24px",
-        display: "flex",
-        flexDirection: "column",
-        gap: "20px",
-      }}
-    >
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "10px" }}>
-        <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+    <div className="botanical-card p-6 flex flex-col gap-5 bg-white">
+      {/* Widget Header */}
+      <div className="flex justify-between items-center flex-wrap gap-3">
+        <div className="flex items-center gap-3">
           <div
+            className="p-2.5 rounded-xl border flex items-center justify-center"
             style={{
-              padding: "8px",
-              borderRadius: "12px",
-              background: confirmedPumpOn ? "rgba(16, 185, 129, 0.2)" : "rgba(100, 116, 139, 0.2)",
-              color: confirmedPumpOn ? "#10b981" : "#94a3b8",
+              backgroundColor: confirmedPumpOn ? "var(--terracotta-100)" : "var(--bg-subtle)",
+              borderColor: confirmedPumpOn ? "var(--terracotta-border)" : "var(--border-subtle)",
+              color: confirmedPumpOn ? "var(--terracotta-700)" : "var(--text-secondary)",
             }}
           >
             <Power size={20} />
           </div>
           <div>
-            <h3 style={{ fontSize: "18px", fontWeight: 700, margin: 0, color: "#f8fafc" }}>
-              Water Pump Actuator
-            </h3>
-            <span style={{ fontSize: "12px", color: "#64748b" }}>
-              Relay IN: GPIO 14 (D5) &bull; 5V DC Submersible
+            <h3 className="title-md font-serif text-lg">Irrigation Pump Controller</h3>
+            <span className="mono-tag block" style={{ color: "var(--text-muted)" }}>
+              Relay IN: GPIO 14 (D5) &bull; Active-LOW Optocoupled
             </span>
           </div>
         </div>
 
-        {/* Confirmed Physical State Badge */}
-        <div
-          style={{
-            display: "flex",
-            alignItems: "center",
-            gap: "8px",
-            background: confirmedPumpOn ? "rgba(16, 185, 129, 0.15)" : "rgba(15, 23, 42, 0.6)",
-            border: `1px solid ${confirmedPumpOn ? "rgba(16, 185, 129, 0.3)" : "rgba(255, 255, 255, 0.1)"}`,
-            padding: "6px 14px",
-            borderRadius: "999px",
-          }}
-        >
+        {/* Confirmed Physical Firmware State Badge */}
+        <div className={confirmedPumpOn ? "pill-terracotta" : "pill-forest"}>
           <span
+            className="w-2 h-2 rounded-full"
             style={{
-              width: "8px",
-              height: "8px",
-              borderRadius: "50%",
-              background: confirmedPumpOn ? "#10b981" : "#64748b",
-              boxShadow: confirmedPumpOn ? "0 0 10px #10b981" : "none",
+              backgroundColor: confirmedPumpOn ? "var(--terracotta-600)" : "var(--forest-600)",
+              boxShadow: confirmedPumpOn ? "0 0 8px rgba(189, 81, 52, 0.5)" : "none",
             }}
           />
-          <span
-            style={{
-              fontSize: "13px",
-              fontWeight: 600,
-              color: confirmedPumpOn ? "#10b981" : "#94a3b8",
-            }}
-          >
-            {confirmedPumpOn ? "PUMP ACTIVE (IRRIGATING)" : "PUMP IDLE (STANDBY)"}
+          <span className="font-semibold uppercase tracking-wider text-[11px]">
+            {confirmedPumpOn ? "Relay Closed (Irrigating)" : "Relay Open (Standby)"}
           </span>
         </div>
       </div>
 
+      {/* Error Message Alert */}
       {errorMsg && (
         <div
+          className="p-3 rounded-xl border text-xs flex items-center gap-2"
           style={{
-            background: "rgba(239, 68, 68, 0.15)",
-            border: "1px solid rgba(239, 68, 68, 0.3)",
-            color: "#fca5a5",
-            padding: "10px 14px",
-            borderRadius: "10px",
-            fontSize: "13px",
-            display: "flex",
-            alignItems: "center",
-            gap: "8px",
+            backgroundColor: "var(--terracotta-50)",
+            borderColor: "rgba(189, 81, 52, 0.2)",
+            color: "var(--terracotta-700)",
           }}
         >
-          <ShieldAlert size={16} />
-          {errorMsg}
+          <ShieldAlert size={16} className="shrink-0" />
+          <span>{errorMsg}</span>
         </div>
       )}
 
+      {/* Pending Command Feedback */}
       {pendingAction && (
         <div
+          className="p-3 rounded-xl border text-xs flex items-center gap-2"
           style={{
-            background: "rgba(59, 130, 246, 0.15)",
-            border: "1px solid rgba(59, 130, 246, 0.3)",
-            color: "#93c5fd",
-            padding: "10px 14px",
-            borderRadius: "10px",
-            fontSize: "13px",
-            display: "flex",
-            alignItems: "center",
-            gap: "8px",
+            backgroundColor: "var(--dew-100)",
+            borderColor: "rgba(49, 119, 140, 0.2)",
+            color: "var(--dew-700)",
           }}
         >
-          <Loader2 size={16} className="animate-spin" />
-          {pendingAction}... Awaiting ESP8266 acknowledgment.
+          <Loader2 size={15} className="animate-spin shrink-0" />
+          <span>{pendingAction}... Awaiting ESP8266 acknowledgment packet.</span>
         </div>
       )}
 
-      {/* Mode Selector and Manual Action Controls */}
-      <div
-        style={{
-          display: "grid",
-          gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))",
-          gap: "16px",
-          alignItems: "center",
-        }}
-      >
-        {/* Mode Selector */}
+      {/* Controls Grid: Mode Selector & Physical Trigger */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 items-center">
+        {/* Operating Control Mode Selector */}
         <div>
-          <label style={{ fontSize: "12px", fontWeight: 600, color: "#94a3b8", marginBottom: "8px", display: "block" }}>
-            OPERATING CONTROL MODE
+          <label className="mono-tag font-semibold block mb-2" style={{ color: "var(--text-secondary)" }}>
+            OPERATING MODE
           </label>
           <div
-            style={{
-              display: "flex",
-              background: "rgba(0, 0, 0, 0.3)",
-              padding: "4px",
-              borderRadius: "12px",
-              border: "1px solid rgba(255, 255, 255, 0.05)",
-            }}
+            className="flex p-1 rounded-xl border"
+            style={{ backgroundColor: "var(--bg-subtle)", borderColor: "var(--border-subtle)" }}
           >
             {(["AUTO", "MANUAL", "OFF"] as const).map((m) => {
               const isSelected = currentMode === m;
@@ -197,17 +150,13 @@ export default function PumpControlWidget({
                   type="button"
                   onClick={() => handleModeChange(m)}
                   disabled={submitting}
+                  className="flex-1 py-2 px-3 text-xs font-semibold rounded-lg transition-all"
                   style={{
-                    flex: 1,
-                    padding: "8px 12px",
-                    borderRadius: "8px",
-                    border: "none",
-                    background: isSelected ? "rgba(34, 197, 94, 0.2)" : "transparent",
-                    color: isSelected ? "#4ade80" : "#94a3b8",
-                    fontWeight: isSelected ? 700 : 500,
-                    fontSize: "13px",
+                    backgroundColor: isSelected ? "#ffffff" : "transparent",
+                    color: isSelected ? "var(--forest-800)" : "var(--text-muted)",
+                    boxShadow: isSelected ? "var(--shadow-sm)" : "none",
+                    border: isSelected ? "1px solid var(--border-default)" : "1px solid transparent",
                     cursor: submitting ? "not-allowed" : "pointer",
-                    transition: "all 0.2s ease",
                   }}
                 >
                   {m}
@@ -217,44 +166,19 @@ export default function PumpControlWidget({
           </div>
         </div>
 
-        {/* Manual Actuator Button */}
+        {/* Direct Actuator Trigger Button */}
         <div>
-          <label style={{ fontSize: "12px", fontWeight: 600, color: "#94a3b8", marginBottom: "8px", display: "block" }}>
-            DIRECT PHYSICAL RELAY TOGGLE
+          <label className="mono-tag font-semibold block mb-2" style={{ color: "var(--text-secondary)" }}>
+            MANUAL RELAY ACTUATION
           </label>
           <button
             type="button"
             onClick={handleTogglePump}
             disabled={submitting || currentMode !== "MANUAL"}
+            className={confirmedPumpOn ? "btn-terracotta w-full" : "btn-primary w-full"}
             style={{
-              width: "100%",
-              padding: "11px 16px",
-              borderRadius: "12px",
-              border: `1px solid ${
-                confirmedPumpOn
-                  ? "rgba(239, 68, 68, 0.4)"
-                  : currentMode === "MANUAL"
-                  ? "rgba(34, 197, 94, 0.4)"
-                  : "rgba(255, 255, 255, 0.1)"
-              }`,
-              background: confirmedPumpOn
-                ? "rgba(239, 68, 68, 0.2)"
-                : currentMode === "MANUAL"
-                ? "rgba(34, 197, 94, 0.2)"
-                : "rgba(255, 255, 255, 0.04)",
-              color: confirmedPumpOn
-                ? "#f87171"
-                : currentMode === "MANUAL"
-                ? "#4ade80"
-                : "#64748b",
-              fontWeight: 700,
-              fontSize: "14px",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              gap: "8px",
+              opacity: currentMode !== "MANUAL" ? 0.45 : 1,
               cursor: currentMode === "MANUAL" && !submitting ? "pointer" : "not-allowed",
-              transition: "all 0.2s ease",
             }}
           >
             {submitting ? (
@@ -262,68 +186,68 @@ export default function PumpControlWidget({
             ) : (
               <Power size={16} />
             )}
-            {confirmedPumpOn
-              ? "TURN PUMP OFF (MANUAL)"
-              : currentMode === "MANUAL"
-              ? "TURN PUMP ON (MANUAL)"
-              : "ENABLED ONLY IN MANUAL MODE"}
+            <span>
+              {confirmedPumpOn
+                ? "Turn Off Pump (Manual)"
+                : currentMode === "MANUAL"
+                ? "Actuate Pump (Manual)"
+                : "Active in MANUAL Mode Only"}
+            </span>
           </button>
         </div>
       </div>
 
-      {/* Runtime & Watering Status Bar */}
+      {/* Runtime & Telemetry Confirmation Summary */}
       <div
-        style={{
-          display: "grid",
-          gridTemplateColumns: "repeat(auto-fit, minmax(140px, 1fr))",
-          gap: "10px",
-          background: "rgba(0, 0, 0, 0.2)",
-          padding: "12px",
-          borderRadius: "12px",
-          border: "1px solid rgba(255, 255, 255, 0.05)",
-          fontSize: "12px",
-        }}
+        className="grid grid-cols-3 gap-3 p-3.5 rounded-xl border text-xs"
+        style={{ backgroundColor: "var(--bg-subtle)", borderColor: "var(--border-subtle)" }}
       >
         <div>
-          <span style={{ color: "#64748b", display: "block" }}>Last Watering</span>
-          <strong style={{ color: "#e2e8f0" }}>
-            {lastWateringTime ? new Date(lastWateringTime).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", second: "2-digit" }) : "None recorded"}
+          <span className="block" style={{ color: "var(--text-muted)" }}>Last Watering</span>
+          <strong className="font-serif text-sm mt-0.5 block" style={{ color: "var(--text-primary)" }}>
+            {lastWateringTime
+              ? new Date(lastWateringTime).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
+              : "None recorded"}
           </strong>
         </div>
+
         <div>
-          <span style={{ color: "#64748b", display: "block" }}>Pump Runtime</span>
-          <strong style={{ color: confirmedPumpOn ? "#10b981" : "#e2e8f0" }}>
-            {confirmedPumpOn ? `${pumpRuntimeSeconds || 0}s (Running)` : "0s (Standby)"}
+          <span className="block" style={{ color: "var(--text-muted)" }}>Current Run</span>
+          <strong
+            className="font-serif text-sm mt-0.5 block"
+            style={{ color: confirmedPumpOn ? "var(--terracotta-600)" : "var(--text-primary)" }}
+          >
+            {confirmedPumpOn ? `${pumpRuntimeSeconds || 0}s (Active)` : "0s (Standby)"}
           </strong>
         </div>
+
         <div>
-          <span style={{ color: "#64748b", display: "block" }}>Confirmation Status</span>
-          <strong style={{ color: confirmedPumpOn ? "#10b981" : "#94a3b8" }}>
-            {confirmedPumpOn ? "Verified Active" : "Verified Inactive"}
+          <span className="block" style={{ color: "var(--text-muted)" }}>State Authority</span>
+          <strong
+            className="font-serif text-sm mt-0.5 block"
+            style={{ color: confirmedPumpOn ? "var(--terracotta-600)" : "var(--forest-700)" }}
+          >
+            Firmware Verified
           </strong>
         </div>
       </div>
 
-      {/* Safety limit badges */}
+      {/* Hardware Safety Limits */}
       <div
-        style={{
-          display: "flex",
-          gap: "16px",
-          flexWrap: "wrap",
-          paddingTop: "14px",
-          borderTop: "1px solid rgba(255, 255, 255, 0.05)",
-          fontSize: "12px",
-          color: "#94a3b8",
-        }}
+        className="flex items-center gap-4 flex-wrap pt-3 border-t text-xs"
+        style={{ borderColor: "var(--border-subtle)", color: "var(--text-muted)" }}
       >
-        <span style={{ display: "flex", alignItems: "center", gap: "5px" }}>
-          <Clock size={13} color="#f59e0b" /> Max Run: <strong>15s Watchdog</strong>
+        <span className="flex items-center gap-1.5">
+          <Clock size={13} style={{ color: "var(--gold-600)" }} />
+          <span>Watchdog: <strong>15s limit</strong></span>
         </span>
-        <span style={{ display: "flex", alignItems: "center", gap: "5px" }}>
-          <Clock size={13} color="#3b82f6" /> Min Cooldown: <strong>60s Rest</strong>
+        <span className="flex items-center gap-1.5">
+          <Clock size={13} style={{ color: "var(--dew-600)" }} />
+          <span>Cooldown: <strong>60s safety lockout</strong></span>
         </span>
-        <span style={{ display: "flex", alignItems: "center", gap: "5px" }}>
-          <CheckCircle2 size={13} color="#10b981" /> Fail-safe: <strong>Safe Boot OFF</strong>
+        <span className="flex items-center gap-1.5">
+          <CheckCircle2 size={13} style={{ color: "var(--forest-600)" }} />
+          <span>Default: <strong>Safe Boot OFF</strong></span>
         </span>
       </div>
     </div>

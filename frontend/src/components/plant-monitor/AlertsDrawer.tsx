@@ -26,68 +26,58 @@ export default function AlertsDrawer({ alerts, onAlertAcknowledged }: Props) {
 
   return (
     <div
+      role="region"
+      aria-label="Active System Alerts"
+      className="botanical-card p-5"
       style={{
-        background: "rgba(239, 68, 68, 0.08)",
-        border: "1px solid rgba(239, 68, 68, 0.25)",
-        borderRadius: "16px",
-        padding: "18px",
-        display: "flex",
-        flexDirection: "column",
-        gap: "12px",
+        backgroundColor: "var(--terracotta-50)",
+        borderColor: "var(--terracotta-100)",
       }}
     >
-      <div style={{ display: "flex", alignItems: "center", gap: "8px", color: "#f87171", fontSize: "14px", fontWeight: 700 }}>
-        <BellRing size={16} />
-        Active System & Sensor Alerts ({unacknowledged.length})
+      <div className="flex items-center justify-between mb-3">
+        <div className="flex items-center gap-2 font-semibold text-sm" style={{ color: "var(--terracotta-700)" }}>
+          <BellRing size={16} />
+          <span>Active Agronomic & Hardware Alerts ({unacknowledged.length})</span>
+        </div>
+        <span className="mono-tag" style={{ color: "var(--terracotta-600)" }}>
+          Requires Attention
+        </span>
       </div>
 
-      <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+      <div className="flex flex-col gap-2.5">
         {unacknowledged.map((alert) => (
           <div
             key={alert.id}
-            style={{
-              display: "flex",
-              justifyContent: "space-between",
-              alignItems: "center",
-              background: "rgba(15, 23, 42, 0.6)",
-              padding: "10px 14px",
-              borderRadius: "10px",
-              border: "1px solid rgba(255, 255, 255, 0.05)",
-              flexWrap: "wrap",
-              gap: "10px",
-            }}
+            className="flex items-center justify-between flex-wrap gap-3 p-3 rounded-xl bg-white border"
+            style={{ borderColor: "rgba(189, 81, 52, 0.15)" }}
           >
-            <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
-              <AlertCircle size={16} color={alert.severity === "high" ? "#ef4444" : "#f59e0b"} />
+            <div className="flex items-start gap-2.5">
+              <AlertCircle
+                size={16}
+                className="mt-0.5 shrink-0"
+                style={{ color: alert.severity === "high" ? "var(--terracotta-600)" : "var(--gold-600)" }}
+              />
               <div>
-                <span style={{ fontSize: "13px", color: "#f1f5f9", fontWeight: 500 }}>
+                <p className="text-sm font-medium" style={{ color: "var(--text-primary)" }}>
                   {alert.message}
-                </span>
-                <div style={{ fontSize: "11px", color: "#64748b" }}>
-                  {new Date(alert.timestamp).toLocaleTimeString()} &bull; Severity: {alert.severity.toUpperCase()}
-                </div>
+                </p>
+                <p className="text-xs mt-0.5" style={{ color: "var(--text-muted)" }}>
+                  {new Date(alert.timestamp).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })} &bull;{" "}
+                  <span className="uppercase font-semibold tracking-wider text-[10px]">
+                    {alert.severity} priority
+                  </span>
+                </p>
               </div>
             </div>
 
             <button
               type="button"
               onClick={() => handleAcknowledge(alert.id)}
-              style={{
-                background: "rgba(255, 255, 255, 0.08)",
-                border: "1px solid rgba(255, 255, 255, 0.1)",
-                color: "#cbd5e1",
-                padding: "5px 12px",
-                borderRadius: "6px",
-                fontSize: "12px",
-                fontWeight: 600,
-                cursor: "pointer",
-                display: "flex",
-                alignItems: "center",
-                gap: "4px",
-              }}
+              className="btn-secondary text-xs py-1.5 px-3"
+              style={{ borderRadius: "var(--radius-sm)" }}
             >
               <Check size={13} />
-              Acknowledge
+              <span>Acknowledge</span>
             </button>
           </div>
         ))}

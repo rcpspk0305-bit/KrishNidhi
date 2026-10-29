@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { Wifi, WifiOff, Server, ShieldCheck, Activity } from "lucide-react";
+import { Wifi, WifiOff, Radio, Clock } from "lucide-react";
 import { PlantDeviceStatus } from "@/types/plant-monitor";
 
 interface Props {
@@ -15,85 +15,57 @@ export default function DeviceStatusBadge({ status, sseConnected, lastEventTime 
   const secondsAgo = status?.seconds_since_last_seen;
 
   return (
-    <div
-      style={{
-        display: "flex",
-        alignItems: "center",
-        gap: "12px",
-        flexWrap: "wrap",
-      }}
-    >
+    <div className="flex items-center gap-3 flex-wrap">
       {/* ESP8266 Hardware Status */}
       <div
-        style={{
-          display: "flex",
-          alignItems: "center",
-          gap: "8px",
-          background: isOnline ? "rgba(16, 185, 129, 0.12)" : "rgba(239, 68, 68, 0.12)",
-          border: `1px solid ${isOnline ? "rgba(16, 185, 129, 0.3)" : "rgba(239, 68, 68, 0.3)"}`,
-          padding: "6px 14px",
-          borderRadius: "999px",
-        }}
+        className={isOnline ? "pill-forest" : "pill-terracotta"}
+        role="status"
+        aria-label={`ESP8266 hardware is ${isOnline ? "connected" : "offline"}`}
       >
+        <span
+          className="w-2 h-2 rounded-full inline-block"
+          style={{
+            backgroundColor: isOnline ? "var(--forest-600)" : "var(--terracotta-600)",
+            boxShadow: isOnline ? "0 0 6px rgba(49, 92, 69, 0.4)" : "none",
+          }}
+        />
         {isOnline ? (
           <>
-            <span
-              style={{
-                width: "8px",
-                height: "8px",
-                borderRadius: "50%",
-                background: "#10b981",
-                boxShadow: "0 0 8px #10b981",
-              }}
-            />
-            <Wifi size={14} color="#10b981" />
-            <span style={{ fontSize: "12px", fontWeight: 600, color: "#10b981" }}>
-              ESP8266 Online
-            </span>
+            <Wifi size={13} className="text-forest-700" />
+            <span>ESP8266 Online</span>
           </>
         ) : (
           <>
-            <span
-              style={{
-                width: "8px",
-                height: "8px",
-                borderRadius: "50%",
-                background: "#ef4444",
-              }}
-            />
-            <WifiOff size={14} color="#ef4444" />
-            <span style={{ fontSize: "12px", fontWeight: 600, color: "#ef4444" }}>
-              ESP8266 Offline
-            </span>
+            <WifiOff size={13} className="text-terracotta-600" />
+            <span>ESP8266 Offline</span>
           </>
         )}
       </div>
 
-      {/* SSE Real-time Feed */}
+      {/* SSE Real-time Stream Status */}
       <div
-        style={{
-          display: "flex",
-          alignItems: "center",
-          gap: "6px",
-          background: "rgba(255, 255, 255, 0.04)",
-          border: "1px solid rgba(255, 255, 255, 0.08)",
-          padding: "6px 12px",
-          borderRadius: "999px",
-          fontSize: "12px",
-          color: "#94a3b8",
-        }}
+        className="pill-dew"
+        role="status"
+        aria-label={`Live telemetry stream is ${sseConnected ? "active" : "reconnecting"}`}
       >
-        <Server size={13} color={sseConnected ? "#38bdf8" : "#94a3b8"} />
+        <Radio size={13} className={sseConnected ? "animate-pulse" : ""} />
         <span>Live SSE:</span>
-        <strong style={{ color: sseConnected ? "#38bdf8" : "#f59e0b" }}>
-          {sseConnected ? "Streaming" : "Connecting..."}
-        </strong>
+        <strong className="font-semibold">{sseConnected ? "Connected" : "Syncing..."}</strong>
+        {lastEventTime && (
+          <span className="mono-tag opacity-75 ml-1">
+            {lastEventTime.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", second: "2-digit" })}
+          </span>
+        )}
       </div>
 
       {/* Last Ping Age */}
       {secondsAgo != null && (
-        <span style={{ fontSize: "12px", color: "#64748b" }}>
-          Last telemetry: <strong>{secondsAgo.toFixed(0)}s ago</strong>
+        <span className="text-xs flex items-center gap-1.5" style={{ color: "var(--text-muted)" }}>
+          <Clock size={12} />
+          <span>Last packet:</span>
+          <strong className="font-medium" style={{ color: "var(--text-secondary)" }}>
+            {secondsAgo < 5 ? "just now" : `${secondsAgo.toFixed(0)}s ago`}
+          </strong>
         </span>
       )}
     </div>

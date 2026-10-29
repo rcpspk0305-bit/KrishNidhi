@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { Sliders, Cpu, Send, CheckCircle2, Play, Square, Radio, Shield } from "lucide-react";
+import { Cpu, Send, CheckCircle2, Play, Square, Sliders } from "lucide-react";
 import { plantApi } from "@/lib/plant-api";
 
 interface Props {
@@ -18,14 +18,14 @@ export default function HardwareSimulatorPanel({
   onTelemetryEmitted,
 }: Props) {
   const [isOpen, setIsOpen] = useState(false);
-  const [simTemp, setSimTemp] = useState(28.5);
-  const [simHumidity, setSimHumidity] = useState(62.0);
-  const [simSoilRaw, setSimSoilRaw] = useState(580); // ~57% moisture
+  const [simTemp, setSimTemp] = useState(26.5);
+  const [simHumidity, setSimHumidity] = useState(60.0);
+  const [simSoilRaw, setSimSoilRaw] = useState(560); // ~61% calibrated moisture
   const [simMotion, setSimMotion] = useState(false);
   const [isAutoLoopActive, setIsAutoLoopActive] = useState(false);
   const [lastAckMessage, setLastAckMessage] = useState<string | null>(null);
 
-  // Compute calibrated moisture from raw ADC using standard dry=850 wet=380
+  // Compute calibrated moisture percentage from raw ADC (dry=850, wet=380)
   const simMoisturePct = Math.min(100, Math.max(0, ((850 - simSoilRaw) / (850 - 380)) * 100));
 
   const handleEmitTelemetry = async () => {
@@ -59,22 +59,21 @@ export default function HardwareSimulatorPanel({
 
         if (data.has_command && data.command) {
           const cmd = data.command;
-          console.log("[Virtual ESP8266] Received command:", cmd);
 
           let confirmedState = confirmedPumpOn;
           if (cmd.action === "SET_PUMP") {
             confirmedState = cmd.value === "true";
           }
 
-          // Acknowledge after simulated 500ms relay coil propagation
+          // Acknowledge after simulated 400ms relay coil propagation
           setTimeout(async () => {
             await plantApi.simulateAckCommand(deviceId, cmd.command_id, confirmedState, "APPLIED");
             setLastAckMessage(`Command ${cmd.command_id} applied: Relay = ${confirmedState ? "ON" : "OFF"}`);
             if (onTelemetryEmitted) onTelemetryEmitted();
           }, 400);
         }
-      } catch (err) {
-        // silent loop error
+      } catch {
+        // silent error during simulation loop
       }
     }, 2000);
 
@@ -83,58 +82,53 @@ export default function HardwareSimulatorPanel({
 
   return (
     <div
+      className="botanical-card p-5 border-dashed"
       style={{
-        background: "rgba(15, 23, 42, 0.6)",
-        border: "1px dashed rgba(34, 197, 94, 0.4)",
-        borderRadius: "18px",
-        padding: "18px 22px",
-        display: "flex",
-        flexDirection: "column",
-        gap: "14px",
+        backgroundColor: "var(--bg-subtle)",
+        borderColor: "rgba(37, 72, 54, 0.25)",
       }}
     >
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-        <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
-          <div style={{ padding: "6px", borderRadius: "8px", background: "rgba(34, 197, 94, 0.2)", color: "#4ade80" }}>
+      <div className="flex justify-between items-center flex-wrap gap-3">
+        <div className="flex items-center gap-3">
+          <div
+            className="p-2 rounded-xl flex items-center justify-center border"
+            style={{
+              backgroundColor: "var(--forest-100)",
+              borderColor: "var(--forest-100)",
+              color: "var(--forest-800)",
+            }}
+          >
             <Cpu size={18} />
           </div>
           <div>
-            <span style={{ fontSize: "14px", fontWeight: 700, color: "#f8fafc" }}>
-              Virtual ESP8266 Hardware Simulator
-            </span>
-            <div style={{ fontSize: "12px", color: "#94a3b8" }}>
-              Test telemetry, thresholds, and relay ACKs in browser without physical hardware connected
-            </div>
+            <h4 className="font-serif font-bold text-sm" style={{ color: "var(--text-primary)" }}>
+              Virtual Hardware Test Bench
+            </h4>
+            <p className="text-xs" style={{ color: "var(--text-muted)" }}>
+              Simulate ESP8266 sensor packets and relay acknowledgments directly in the browser
+            </p>
           </div>
         </div>
 
         <button
           type="button"
           onClick={() => setIsOpen(!isOpen)}
-          style={{
-            background: "rgba(255, 255, 255, 0.08)",
-            border: "1px solid rgba(255, 255, 255, 0.15)",
-            color: "#f1f5f9",
-            padding: "6px 14px",
-            borderRadius: "8px",
-            fontSize: "12px",
-            fontWeight: 600,
-            cursor: "pointer",
-          }}
+          className="btn-secondary text-xs py-1.5 px-3"
         >
-          {isOpen ? "Hide Controls" : "Open Simulator"}
+          <Sliders size={13} />
+          <span>{isOpen ? "Close Test Bench" : "Open Test Bench"}</span>
         </button>
       </div>
 
       {isOpen && (
-        <div style={{ display: "flex", flexDirection: "column", gap: "16px", paddingTop: "12px", borderTop: "1px solid rgba(255, 255, 255, 0.06)" }}>
-          {/* Sliders grid */}
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: "14px" }}>
-            {/* Temp slider */}
+        <div className="flex flex-col gap-4 pt-4 mt-3 border-t" style={{ borderColor: "var(--border-subtle)" }}>
+          {/* Sliders Grid */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
+            {/* Temperature Slider */}
             <div>
-              <div style={{ display: "flex", justifyContent: "space-between", fontSize: "12px", color: "#cbd5e1" }}>
-                <span>Simulated Temp (DHT11):</span>
-                <strong>{simTemp.toFixed(1)} °C</strong>
+              <div className="flex justify-between text-xs mb-1 font-medium" style={{ color: "var(--text-secondary)" }}>
+                <span>Temp (DHT11):</span>
+                <strong className="mono-tag">{simTemp.toFixed(1)}°C</strong>
               </div>
               <input
                 type="range"
@@ -143,15 +137,16 @@ export default function HardwareSimulatorPanel({
                 step="0.5"
                 value={simTemp}
                 onChange={(e) => setSimTemp(parseFloat(e.target.value))}
-                style={{ width: "100%", accentColor: "#f43f5e", cursor: "pointer" }}
+                className="w-full cursor-pointer accent-terracotta"
+                style={{ accentColor: "var(--terracotta-600)" }}
               />
             </div>
 
-            {/* Humidity slider */}
+            {/* Humidity Slider */}
             <div>
-              <div style={{ display: "flex", justifyContent: "space-between", fontSize: "12px", color: "#cbd5e1" }}>
-                <span>Simulated Humidity (DHT11):</span>
-                <strong>{simHumidity.toFixed(0)} %</strong>
+              <div className="flex justify-between text-xs mb-1 font-medium" style={{ color: "var(--text-secondary)" }}>
+                <span>Humidity (DHT11):</span>
+                <strong className="mono-tag">{simHumidity.toFixed(0)}%</strong>
               </div>
               <input
                 type="range"
@@ -160,15 +155,16 @@ export default function HardwareSimulatorPanel({
                 step="1"
                 value={simHumidity}
                 onChange={(e) => setSimHumidity(parseFloat(e.target.value))}
-                style={{ width: "100%", accentColor: "#3b82f6", cursor: "pointer" }}
+                className="w-full cursor-pointer accent-dew"
+                style={{ accentColor: "var(--dew-600)" }}
               />
             </div>
 
-            {/* Soil Moisture ADC slider */}
+            {/* Soil Raw ADC Slider */}
             <div>
-              <div style={{ display: "flex", justifyContent: "space-between", fontSize: "12px", color: "#cbd5e1" }}>
-                <span>Soil Raw ADC (A0):</span>
-                <strong>{simSoilRaw} ({simMoisturePct.toFixed(0)}%)</strong>
+              <div className="flex justify-between text-xs mb-1 font-medium" style={{ color: "var(--text-secondary)" }}>
+                <span>Soil Moisture (A0):</span>
+                <strong className="mono-tag">{simSoilRaw} ({simMoisturePct.toFixed(0)}%)</strong>
               </div>
               <input
                 type="range"
@@ -177,80 +173,52 @@ export default function HardwareSimulatorPanel({
                 step="10"
                 value={simSoilRaw}
                 onChange={(e) => setSimSoilRaw(parseInt(e.target.value, 10))}
-                style={{ width: "100%", accentColor: "#10b981", cursor: "pointer" }}
+                className="w-full cursor-pointer accent-forest"
+                style={{ accentColor: "var(--forest-600)" }}
               />
             </div>
 
-            {/* PIR Motion toggle */}
-            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "8px 0" }}>
-              <span style={{ fontSize: "12px", color: "#cbd5e1" }}>Simulate PIR Motion:</span>
+            {/* Motion Sensor Toggle */}
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-medium" style={{ color: "var(--text-secondary)" }}>
+                PIR Motion:
+              </span>
               <button
                 type="button"
                 onClick={() => setSimMotion(!simMotion)}
-                style={{
-                  padding: "4px 12px",
-                  borderRadius: "6px",
-                  border: `1px solid ${simMotion ? "#a855f7" : "#475569"}`,
-                  background: simMotion ? "rgba(168, 85, 247, 0.2)" : "transparent",
-                  color: simMotion ? "#c084fc" : "#94a3b8",
-                  fontSize: "12px",
-                  fontWeight: 600,
-                  cursor: "pointer",
-                }}
+                className={`py-1.5 px-3 rounded-lg text-xs font-semibold border transition-all ${
+                  simMotion ? "pill-gold" : "btn-secondary"
+                }`}
               >
-                {simMotion ? "Active (Motion)" : "Clear"}
+                {simMotion ? "Motion Active" : "Field Clear"}
               </button>
             </div>
           </div>
 
-          {/* Action buttons */}
-          <div style={{ display: "flex", gap: "10px", flexWrap: "wrap", alignItems: "center" }}>
+          {/* Action Row */}
+          <div className="flex items-center gap-3 flex-wrap pt-2">
             <button
               type="button"
               onClick={handleEmitTelemetry}
-              style={{
-                background: "linear-gradient(135deg, #15803d 0%, #166534 100%)",
-                border: "1px solid #22c55e",
-                color: "#ffffff",
-                padding: "8px 16px",
-                borderRadius: "8px",
-                fontSize: "13px",
-                fontWeight: 600,
-                cursor: "pointer",
-                display: "flex",
-                alignItems: "center",
-                gap: "6px",
-              }}
+              className="btn-primary text-xs py-2 px-3.5"
             >
-              <Send size={14} />
-              Transmit Telemetry Packet
+              <Send size={13} />
+              <span>Broadcast Telemetry Packet</span>
             </button>
 
             <button
               type="button"
               onClick={() => setIsAutoLoopActive(!isAutoLoopActive)}
-              style={{
-                background: isAutoLoopActive ? "rgba(239, 68, 68, 0.2)" : "rgba(59, 130, 246, 0.2)",
-                border: `1px solid ${isAutoLoopActive ? "#ef4444" : "#3b82f6"}`,
-                color: isAutoLoopActive ? "#fca5a5" : "#93c5fd",
-                padding: "8px 16px",
-                borderRadius: "8px",
-                fontSize: "13px",
-                fontWeight: 600,
-                cursor: "pointer",
-                display: "flex",
-                alignItems: "center",
-                gap: "6px",
-              }}
+              className={isAutoLoopActive ? "btn-terracotta text-xs py-2 px-3.5" : "btn-secondary text-xs py-2 px-3.5"}
             >
-              {isAutoLoopActive ? <Square size={14} /> : <Play size={14} />}
-              {isAutoLoopActive ? "Stop Virtual ESP8266 Auto-Ack" : "Start Virtual ESP8266 Auto-Ack"}
+              {isAutoLoopActive ? <Square size={13} /> : <Play size={13} />}
+              <span>{isAutoLoopActive ? "Stop Firmware Auto-ACK" : "Start Firmware Auto-ACK"}</span>
             </button>
 
             {lastAckMessage && (
-              <span style={{ fontSize: "12px", color: "#34d399", display: "flex", alignItems: "center", gap: "4px" }}>
+              <span className="text-xs flex items-center gap-1 font-medium" style={{ color: "var(--forest-700)" }}>
                 <CheckCircle2 size={13} />
-                {lastAckMessage}
+                <span>{lastAckMessage}</span>
               </span>
             )}
           </div>

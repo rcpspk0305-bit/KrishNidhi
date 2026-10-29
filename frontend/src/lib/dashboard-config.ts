@@ -74,7 +74,15 @@ export const metricTabs: {
   }
 ];
 
-export const sensorSummaries = (current: any) => [
+export interface DashboardCurrentMetrics {
+  temperature: number;
+  humidity: number;
+  tds: number;
+  ph: number;
+  [key: string]: unknown;
+}
+
+export const sensorSummaries = (current: DashboardCurrentMetrics) => [
   { label: "Temperature", value: current.temperature.toFixed(1), unit: "°C", hint: "Stable" },
   { label: "Humidity", value: current.humidity.toFixed(1), unit: "%", hint: "Optimal" },
   { label: "Water TDS", value: current.tds.toFixed(0), unit: "", hint: "Safe" },

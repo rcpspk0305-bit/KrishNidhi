@@ -18,7 +18,7 @@ export const getIoTStatus = async () => {
   return response.data;
 };
 
-export const postIoTTelemetry = async (payload: Record<string, any>) => {
+export const postIoTTelemetry = async (payload: Record<string, unknown>) => {
   const response = await axios.post(`${API_BASE}/iot/telemetry`, payload);
   return response.data;
 };

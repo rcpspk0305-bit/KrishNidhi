@@ -25,7 +25,10 @@ export default function MetricContent({ metric, value, series }: Props) {
   
   const comparisonSeries = useMemo(() => {
     const factor = timeframe === "daily" ? 0.95 : 0.85;
-    return series.map(v => v * (factor + Math.random() * 0.1));
+    return series.map((v, i) => {
+      const pseudoNoise = (((i * 13 + 7) % 11) - 5) / 100;
+      return v * (factor + pseudoNoise);
+    });
   }, [series, timeframe]);
 
   const getChartColor = () => {
@@ -34,6 +37,8 @@ export default function MetricContent({ metric, value, series }: Props) {
     if (metric.id.includes("ph")) return "#f59e0b";
     return "#10b981";
   };
+
+  const variancePercent = (((Math.abs(value * 3) + 7) % 25) / 10 + 0.5).toFixed(1);
 
   return (
     <section className="content-card glass" style={{ display: "grid", gap: 24, padding: "32px" }}>
@@ -57,7 +62,7 @@ export default function MetricContent({ metric, value, series }: Props) {
         <div className="panel-card glass" style={{ background: "rgba(255,255,255,0.02)" }}>
           <p className="muted" style={{ fontSize: 12 }}>VARIANCE</p>
           <div className="between" style={{ marginTop: 12 }}>
-             <h3 style={{ fontSize: 24 }}>+{(Math.random() * 2).toFixed(1)}%</h3>
+             <h3 style={{ fontSize: 24 }}>+{variancePercent}%</h3>
              <TrendingUp size={20} color="#10b981" />
           </div>
         </div>

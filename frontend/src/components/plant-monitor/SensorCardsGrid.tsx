@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { Thermometer, Droplets, Wind, Radio, Activity } from "lucide-react";
+import { Thermometer, Droplets, Wind, Radio } from "lucide-react";
 import { PlantTelemetry } from "@/types/plant-monitor";
 
 interface Props {
@@ -16,202 +16,192 @@ export default function SensorCardsGrid({ telemetry, loading }: Props) {
   const soilRaw = telemetry?.soil_raw ?? null;
   const motion = telemetry?.motion_detected ?? false;
 
+  const isTempOptimal = temp != null && temp >= 18 && temp <= 30;
+  const isHumidityOptimal = humidity != null && humidity >= 50 && humidity <= 75;
+  const isSoilOptimal = soilPct != null && soilPct >= 35 && soilPct <= 70;
+
   return (
-    <div
-      style={{
-        display: "grid",
-        gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))",
-        gap: "18px",
-      }}
-    >
+    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
       {/* 1. TEMPERATURE CARD */}
-      <div
-        style={{
-          background: "rgba(15, 23, 42, 0.7)",
-          border: "1px solid rgba(255, 255, 255, 0.08)",
-          borderRadius: "18px",
-          padding: "20px",
-          display: "flex",
-          flexDirection: "column",
-          gap: "12px",
-          position: "relative",
-          overflow: "hidden",
-        }}
-      >
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-          <div style={{ display: "flex", alignItems: "center", gap: "8px", color: "#94a3b8", fontSize: "13px", fontWeight: 600 }}>
-            <div style={{ padding: "6px", borderRadius: "10px", background: "rgba(244, 63, 94, 0.15)", color: "#f43f5e" }}>
-              <Thermometer size={16} />
+      <div className="botanical-card p-5 flex flex-col justify-between">
+        <div>
+          <div className="flex justify-between items-center mb-3">
+            <div className="flex items-center gap-2 text-xs font-semibold" style={{ color: "var(--text-secondary)" }}>
+              <div
+                className="p-1.5 rounded-lg"
+                style={{ backgroundColor: "var(--terracotta-100)", color: "var(--terracotta-700)" }}
+              >
+                <Thermometer size={16} />
+              </div>
+              <span>Ambient Temp (DHT11)</span>
             </div>
-            Ambient Temp (DHT11)
-          </div>
-          <span style={{ fontSize: "11px", padding: "2px 8px", borderRadius: "999px", background: "rgba(244, 63, 94, 0.1)", color: "#f43f5e", border: "1px solid rgba(244, 63, 94, 0.2)" }}>
-            GPIO 12 / D6
-          </span>
-        </div>
-
-        <div style={{ display: "flex", alignItems: "baseline", gap: "6px" }}>
-          <span style={{ fontSize: "36px", fontWeight: 800, color: "#f8fafc" }}>
-            {loading ? "--" : temp != null ? temp.toFixed(1) : "N/A"}
-          </span>
-          <span style={{ fontSize: "18px", color: "#94a3b8", fontWeight: 600 }}>°C</span>
-        </div>
-
-        <div style={{ fontSize: "12px", color: "#64748b" }}>
-          Target: 18.0°C – 30.0°C
-          <div style={{ marginTop: "6px", display: "flex", alignItems: "center", gap: "6px" }}>
-            <span style={{ width: "8px", height: "8px", borderRadius: "50%", background: temp != null && temp >= 18 && temp <= 30 ? "#10b981" : "#f59e0b" }} />
-            <span style={{ color: temp != null && temp >= 18 && temp <= 30 ? "#10b981" : "#f59e0b", fontWeight: 500 }}>
-              {temp != null && temp >= 18 && temp <= 30 ? "Optimal Microclimate" : "Temperature Warning"}
+            <span className="mono-tag" style={{ color: "var(--text-muted)" }}>
+              GPIO 12 / D6
             </span>
           </div>
+
+          <div className="flex items-baseline gap-1 my-2">
+            <span className="metric-num text-4xl font-serif" style={{ color: "var(--text-primary)" }}>
+              {loading ? "--" : temp != null ? temp.toFixed(1) : "N/A"}
+            </span>
+            <span className="text-sm font-semibold" style={{ color: "var(--text-muted)" }}>
+              °C
+            </span>
+          </div>
+        </div>
+
+        <div className="pt-3 border-t text-xs" style={{ borderColor: "var(--border-subtle)", color: "var(--text-muted)" }}>
+          <div className="flex items-center justify-between">
+            <span>Target: 18.0°C – 30.0°C</span>
+            <span
+              className="w-2 h-2 rounded-full"
+              style={{ backgroundColor: isTempOptimal ? "var(--forest-600)" : "var(--gold-600)" }}
+            />
+          </div>
+          <p className="mt-1 font-medium" style={{ color: isTempOptimal ? "var(--forest-700)" : "var(--gold-700)" }}>
+            {temp != null ? (isTempOptimal ? "Optimal Microclimate" : "Temperature Variance") : "Pending read"}
+          </p>
         </div>
       </div>
 
       {/* 2. RELATIVE HUMIDITY CARD */}
-      <div
-        style={{
-          background: "rgba(15, 23, 42, 0.7)",
-          border: "1px solid rgba(255, 255, 255, 0.08)",
-          borderRadius: "18px",
-          padding: "20px",
-          display: "flex",
-          flexDirection: "column",
-          gap: "12px",
-          position: "relative",
-          overflow: "hidden",
-        }}
-      >
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-          <div style={{ display: "flex", alignItems: "center", gap: "8px", color: "#94a3b8", fontSize: "13px", fontWeight: 600 }}>
-            <div style={{ padding: "6px", borderRadius: "10px", background: "rgba(59, 130, 246, 0.15)", color: "#3b82f6" }}>
-              <Wind size={16} />
+      <div className="botanical-card p-5 flex flex-col justify-between">
+        <div>
+          <div className="flex justify-between items-center mb-3">
+            <div className="flex items-center gap-2 text-xs font-semibold" style={{ color: "var(--text-secondary)" }}>
+              <div
+                className="p-1.5 rounded-lg"
+                style={{ backgroundColor: "var(--dew-100)", color: "var(--dew-700)" }}
+              >
+                <Wind size={16} />
+              </div>
+              <span>Relative Humidity</span>
             </div>
-            Relative Humidity (DHT11)
-          </div>
-          <span style={{ fontSize: "11px", padding: "2px 8px", borderRadius: "999px", background: "rgba(59, 130, 246, 0.1)", color: "#3b82f6", border: "1px solid rgba(59, 130, 246, 0.2)" }}>
-            1-Wire Digital
-          </span>
-        </div>
-
-        <div style={{ display: "flex", alignItems: "baseline", gap: "6px" }}>
-          <span style={{ fontSize: "36px", fontWeight: 800, color: "#f8fafc" }}>
-            {loading ? "--" : humidity != null ? humidity.toFixed(0) : "N/A"}
-          </span>
-          <span style={{ fontSize: "18px", color: "#94a3b8", fontWeight: 600 }}>% RH</span>
-        </div>
-
-        <div style={{ fontSize: "12px", color: "#64748b" }}>
-          Target: 50% – 75%
-          <div style={{ marginTop: "6px", display: "flex", alignItems: "center", gap: "6px" }}>
-            <span style={{ width: "8px", height: "8px", borderRadius: "50%", background: humidity != null && humidity >= 50 && humidity <= 75 ? "#10b981" : "#f59e0b" }} />
-            <span style={{ color: humidity != null && humidity >= 50 && humidity <= 75 ? "#10b981" : "#f59e0b", fontWeight: 500 }}>
-              {humidity != null && humidity >= 50 && humidity <= 75 ? "Comfort Zone" : "Sub-optimal Transpiration"}
+            <span className="mono-tag" style={{ color: "var(--text-muted)" }}>
+              1-Wire Digital
             </span>
           </div>
+
+          <div className="flex items-baseline gap-1 my-2">
+            <span className="metric-num text-4xl font-serif" style={{ color: "var(--text-primary)" }}>
+              {loading ? "--" : humidity != null ? humidity.toFixed(0) : "N/A"}
+            </span>
+            <span className="text-sm font-semibold" style={{ color: "var(--text-muted)" }}>
+              % RH
+            </span>
+          </div>
+        </div>
+
+        <div className="pt-3 border-t text-xs" style={{ borderColor: "var(--border-subtle)", color: "var(--text-muted)" }}>
+          <div className="flex items-center justify-between">
+            <span>Target: 50% – 75% RH</span>
+            <span
+              className="w-2 h-2 rounded-full"
+              style={{ backgroundColor: isHumidityOptimal ? "var(--forest-600)" : "var(--dew-600)" }}
+            />
+          </div>
+          <p className="mt-1 font-medium" style={{ color: isHumidityOptimal ? "var(--forest-700)" : "var(--dew-700)" }}>
+            {humidity != null ? (isHumidityOptimal ? "Comfort Zone" : "Sub-optimal VPD") : "Pending read"}
+          </p>
         </div>
       </div>
 
       {/* 3. SOIL MOISTURE CARD */}
-      <div
-        style={{
-          background: "rgba(15, 23, 42, 0.7)",
-          border: "1px solid rgba(255, 255, 255, 0.08)",
-          borderRadius: "18px",
-          padding: "20px",
-          display: "flex",
-          flexDirection: "column",
-          gap: "12px",
-          position: "relative",
-          overflow: "hidden",
-        }}
-      >
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-          <div style={{ display: "flex", alignItems: "center", gap: "8px", color: "#94a3b8", fontSize: "13px", fontWeight: 600 }}>
-            <div style={{ padding: "6px", borderRadius: "10px", background: "rgba(16, 185, 129, 0.15)", color: "#10b981" }}>
-              <Droplets size={16} />
+      <div className="botanical-card p-5 flex flex-col justify-between">
+        <div>
+          <div className="flex justify-between items-center mb-3">
+            <div className="flex items-center gap-2 text-xs font-semibold" style={{ color: "var(--text-secondary)" }}>
+              <div
+                className="p-1.5 rounded-lg"
+                style={{ backgroundColor: "var(--forest-100)", color: "var(--forest-700)" }}
+              >
+                <Droplets size={16} />
+              </div>
+              <span>Soil Moisture (LM393)</span>
             </div>
-            Soil Moisture (LM393 AO)
-          </div>
-          <span style={{ fontSize: "11px", padding: "2px 8px", borderRadius: "999px", background: "rgba(16, 185, 129, 0.1)", color: "#10b981", border: "1px solid rgba(16, 185, 129, 0.2)" }}>
-            ADC 0 / A0
-          </span>
-        </div>
-
-        <div style={{ display: "flex", alignItems: "baseline", gap: "6px" }}>
-          <span style={{ fontSize: "36px", fontWeight: 800, color: soilPct != null && soilPct < 30 ? "#f87171" : "#f8fafc" }}>
-            {loading ? "--" : soilPct != null ? soilPct.toFixed(0) : "N/A"}
-          </span>
-          <span style={{ fontSize: "18px", color: "#94a3b8", fontWeight: 600 }}>%</span>
-          {soilRaw != null && (
-            <span style={{ fontSize: "12px", color: "#64748b", marginLeft: "auto" }}>
-              Raw ADC: <strong>{soilRaw}</strong>
+            <span className="mono-tag" style={{ color: "var(--text-muted)" }}>
+              ADC 0 / A0
             </span>
-          )}
-        </div>
+          </div>
 
-        {/* Moisture progress gauge */}
-        <div style={{ width: "100%", height: "8px", background: "rgba(255, 255, 255, 0.08)", borderRadius: "999px", overflow: "hidden" }}>
+          <div className="flex items-baseline gap-2 my-2">
+            <span
+              className="metric-num text-4xl font-serif"
+              style={{ color: soilPct != null && soilPct < 30 ? "var(--terracotta-600)" : "var(--forest-800)" }}
+            >
+              {loading ? "--" : soilPct != null ? soilPct.toFixed(0) : "N/A"}
+            </span>
+            <span className="text-sm font-semibold" style={{ color: "var(--text-muted)" }}>
+              %
+            </span>
+            {soilRaw != null && (
+              <span className="mono-tag ml-auto" style={{ color: "var(--text-muted)" }}>
+                Raw: {soilRaw}
+              </span>
+            )}
+          </div>
+
+          {/* Calibrated Moisture Progress Bar */}
           <div
-            style={{
-              width: `${Math.min(100, Math.max(0, soilPct ?? 0))}%`,
-              height: "100%",
-              background: soilPct != null && soilPct < 30 ? "linear-gradient(90deg, #ef4444, #f97316)" : "linear-gradient(90deg, #10b981, #06b6d4)",
-              transition: "width 0.4s ease-in-out",
-            }}
-          />
+            className="w-full h-2 rounded-full overflow-hidden my-2"
+            style={{ backgroundColor: "var(--bg-subtle)" }}
+          >
+            <div
+              className="h-full rounded-full transition-all duration-300"
+              style={{
+                width: `${Math.min(100, Math.max(0, soilPct ?? 0))}%`,
+                backgroundColor: soilPct != null && soilPct < 30 ? "var(--terracotta-500)" : "var(--forest-600)",
+              }}
+            />
+          </div>
         </div>
 
-        <div style={{ fontSize: "12px", color: "#64748b", display: "flex", justifyContent: "space-between" }}>
-          <span>Auto Trigger: &lt;30%</span>
-          <span>Target Cutoff: 55%</span>
+        <div className="pt-3 border-t text-xs flex justify-between" style={{ borderColor: "var(--border-subtle)", color: "var(--text-muted)" }}>
+          <span>Auto-on: &lt;30%</span>
+          <span>Target cutoff: 55%</span>
         </div>
       </div>
 
       {/* 4. PIR MOTION DETECTION CARD */}
-      <div
-        style={{
-          background: "rgba(15, 23, 42, 0.7)",
-          border: "1px solid rgba(255, 255, 255, 0.08)",
-          borderRadius: "18px",
-          padding: "20px",
-          display: "flex",
-          flexDirection: "column",
-          gap: "12px",
-          position: "relative",
-          overflow: "hidden",
-        }}
-      >
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-          <div style={{ display: "flex", alignItems: "center", gap: "8px", color: "#94a3b8", fontSize: "13px", fontWeight: 600 }}>
-            <div style={{ padding: "6px", borderRadius: "10px", background: "rgba(168, 85, 247, 0.15)", color: "#a855f7" }}>
-              <Radio size={16} />
+      <div className="botanical-card p-5 flex flex-col justify-between">
+        <div>
+          <div className="flex justify-between items-center mb-3">
+            <div className="flex items-center gap-2 text-xs font-semibold" style={{ color: "var(--text-secondary)" }}>
+              <div
+                className="p-1.5 rounded-lg"
+                style={{
+                  backgroundColor: motion ? "var(--gold-100)" : "var(--bg-subtle)",
+                  color: motion ? "var(--gold-700)" : "var(--text-muted)",
+                }}
+              >
+                <Radio size={16} />
+              </div>
+              <span>PIR Motion Sensor</span>
             </div>
-            PIR Motion (HC-SR501)
+            <span className="mono-tag" style={{ color: "var(--text-muted)" }}>
+              GPIO 13 / D7
+            </span>
           </div>
-          <span style={{ fontSize: "11px", padding: "2px 8px", borderRadius: "999px", background: "rgba(168, 85, 247, 0.1)", color: "#a855f7", border: "1px solid rgba(168, 85, 247, 0.2)" }}>
-            GPIO 13 / D7
-          </span>
+
+          <div className="flex items-center gap-2.5 my-3">
+            <span
+              className="w-3 h-3 rounded-full transition-all"
+              style={{
+                backgroundColor: motion ? "var(--gold-600)" : "var(--text-muted)",
+                boxShadow: motion ? "0 0 8px rgba(176, 124, 30, 0.4)" : "none",
+              }}
+            />
+            <span
+              className="font-serif font-semibold text-xl"
+              style={{ color: motion ? "var(--gold-700)" : "var(--text-secondary)" }}
+            >
+              {motion ? "Motion Detected" : "Field Clear"}
+            </span>
+          </div>
         </div>
 
-        <div style={{ display: "flex", alignItems: "center", gap: "10px", marginTop: "4px" }}>
-          <div
-            style={{
-              width: "14px",
-              height: "14px",
-              borderRadius: "50%",
-              background: motion ? "#a855f7" : "#475569",
-              boxShadow: motion ? "0 0 12px #a855f7" : "none",
-              transition: "all 0.3s ease",
-            }}
-          />
-          <span style={{ fontSize: "24px", fontWeight: 700, color: motion ? "#e9d5ff" : "#94a3b8" }}>
-            {motion ? "Motion Detected" : "Area Clear"}
-          </span>
-        </div>
-
-        <div style={{ fontSize: "12px", color: "#64748b", marginTop: "auto" }}>
-          Infrared passive detection for animal intrusions or human activity near the planter.
+        <div className="pt-3 border-t text-xs" style={{ borderColor: "var(--border-subtle)", color: "var(--text-muted)" }}>
+          <span>Passive infrared detection around planter perimeter.</span>
         </div>
       </div>
     </div>
