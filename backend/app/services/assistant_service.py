@@ -41,7 +41,7 @@ async def answer_question(request: AssistantRequest) -> str:
 
     async def generate():
         async with _capacity:
-            async with httpx.AsyncClient(timeout=httpx.Timeout(25, connect=5)) as client:
+            async with httpx.AsyncClient(timeout=httpx.Timeout(50, connect=8)) as client:
                 response = await client.post(
                     "https://openrouter.ai/api/v1/chat/completions",
                     headers={"Authorization": f"Bearer {settings.OPENROUTER_API_KEY}"},
@@ -57,7 +57,7 @@ async def answer_question(request: AssistantRequest) -> str:
             return text.strip()
 
     try:
-        return await asyncio.wait_for(generate(), timeout=30)
+        return await asyncio.wait_for(generate(), timeout=55)
     except AssistantUnavailable:
         raise
     except Exception as error:

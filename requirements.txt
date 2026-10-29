@@ -13,3 +13,4 @@ pypdf
 plotly
 pandas
 pillow
+httpx

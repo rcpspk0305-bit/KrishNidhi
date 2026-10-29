@@ -13,7 +13,7 @@ logger = logging.getLogger("agritech.mqtt")
 logging.basicConfig(level=logging.INFO)
 
 # Global in-memory storage for latest sensor values
-latest_iot_data: Dict[str, float] = {
+latest_iot_data: Dict[str, Any] = {
     "N": 88.0,
     "P": 50.0,
     "K": 42.0,
@@ -22,6 +22,11 @@ latest_iot_data: Dict[str, float] = {
     "ph": 6.8,
     "rainfall": 50.0,
     "tds": 150.0,
+    "soil_moisture": 48.0,
+    "soil_raw": 490,
+    "motion_detected": False,
+    "pump_on": False,
+    "control_mode": "AUTO",
 }
 
 # Live connection metadata
@@ -40,12 +45,12 @@ _mqtt_thread_started = False
 _mqtt_client = None
 
 
-def normalize_and_clamp(payload: Dict[str, Any]) -> Dict[str, float]:
+def normalize_and_clamp(payload: Dict[str, Any]) -> Dict[str, Any]:
     """
     Extracts and standardizes telemetry values regardless of naming conventions
-    (e.g., handles 'temp', 'temperature', 'n', 'N', etc.).
+    (e.g., handles 'temp', 'temperature', 'n', 'N', 'soil_moisture', etc.).
     """
-    extracted: Dict[str, float] = {}
+    extracted: Dict[str, Any] = {}
 
     def extract_num(*keys: str, default: Optional[float] = None) -> Optional[float]:
         for k in keys:
@@ -96,12 +101,40 @@ def normalize_and_clamp(payload: Dict[str, Any]) -> Dict[str, float]:
     if val is not None:
         extracted["K"] = round(max(0.0, min(300.0, val)), 1)
 
+    # Soil Moisture (% 0 - 100)
+    val = extract_num("soil_moisture", "moisture", "soil", "m")
+    if val is not None:
+        extracted["soil_moisture"] = round(max(0.0, min(100.0, val)), 1)
+
+    # Raw Soil ADC (0 - 1023)
+    val = extract_num("soil_raw", "raw", "adc")
+    if val is not None:
+        extracted["soil_raw"] = int(max(0, min(1023, int(val))))
+
+    # Motion detected (bool)
+    if "motion_detected" in payload and payload["motion_detected"] is not None:
+        extracted["motion_detected"] = bool(payload["motion_detected"])
+    elif "motion" in payload and payload["motion"] is not None:
+        extracted["motion_detected"] = bool(payload["motion"])
+
+    # Pump state (bool)
+    if "pump_on" in payload and payload["pump_on"] is not None:
+        extracted["pump_on"] = bool(payload["pump_on"])
+    elif "pump" in payload and payload["pump"] is not None:
+        extracted["pump_on"] = bool(payload["pump"])
+
+    # Control mode
+    if "control_mode" in payload and payload["control_mode"]:
+        extracted["control_mode"] = str(payload["control_mode"]).upper()
+    elif "mode" in payload and payload["mode"]:
+        extracted["control_mode"] = str(payload["mode"]).upper()
+
     return extracted
 
 
 def process_telemetry_reading(
     payload: Dict[str, Any], source: str = "mqtt", persist_db: bool = True
-) -> Dict[str, float]:
+) -> Dict[str, Any]:
     """
     Unified telemetry processor used by both MQTT subscriber and HTTP REST endpoint.
     Updates global telemetry, metadata, and persists to SQLite database.
@@ -133,6 +166,7 @@ def process_telemetry_reading(
             db = SessionLocal()
             try:
                 reading = db_models.SensorReading(
+                    device_id=iot_metadata.get("device_id", "esp32-node-01"),
                     temperature=latest_iot_data["temperature"],
                     humidity=latest_iot_data["humidity"],
                     ph=latest_iot_data["ph"],
@@ -141,6 +175,11 @@ def process_telemetry_reading(
                     p=latest_iot_data["P"],
                     k=latest_iot_data["K"],
                     tds=latest_iot_data.get("tds", 150.0),
+                    soil_moisture=latest_iot_data.get("soil_moisture", 48.0),
+                    soil_raw=int(latest_iot_data.get("soil_raw", 490)),
+                    motion_detected=bool(latest_iot_data.get("motion_detected", False)),
+                    pump_on=bool(latest_iot_data.get("pump_on", False)),
+                    control_mode=str(latest_iot_data.get("control_mode", "AUTO")),
                 )
                 db.add(reading)
                 db.commit()

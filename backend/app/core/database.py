@@ -2,22 +2,26 @@ import os
 from sqlalchemy import create_engine
 from sqlalchemy.orm import declarative_base, sessionmaker
 
-# Determine if we are running in Streamlit Cloud
+# Compute standard absolute path to backend/agritech.db
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+BACKEND_DIR = os.path.dirname(BASE_DIR)
+DEFAULT_DB_PATH = os.path.join(BACKEND_DIR, "agritech.db")
+
+DATABASE_URL = os.environ.get("DATABASE_URL")
 IS_STREAMLIT_CLOUD = (
-    os.environ.get("STREAMLIT_SERVER_PORT") is not None 
-    or "mount" in os.path.abspath(__file__) 
+    os.environ.get("STREAMLIT_SHARING_MODE") is not None
+    or "mount" in os.path.abspath(__file__)
     or "home/adminuser" in os.path.abspath(__file__)
 )
 
-if IS_STREAMLIT_CLOUD:
-    # Use relative path in the current working directory for Streamlit Cloud
+if DATABASE_URL:
+    SQLALCHEMY_DATABASE_URL = DATABASE_URL
+elif IS_STREAMLIT_CLOUD and not os.path.exists(DEFAULT_DB_PATH):
+    # Fallback to local cwd sqlite on Streamlit Community Cloud container
     SQLALCHEMY_DATABASE_URL = "sqlite:///agritech.db"
 else:
-    # Local development - use absolute path to backend/agritech.db to share database state
-    BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-    BACKEND_DIR = os.path.dirname(BASE_DIR)
-    DB_PATH = os.path.join(BACKEND_DIR, "agritech.db")
-    DB_PATH_CLEAN = DB_PATH.replace("\\", "/")
+    # Local development & shared process - use absolute path to backend/agritech.db
+    DB_PATH_CLEAN = DEFAULT_DB_PATH.replace("\\", "/")
     SQLALCHEMY_DATABASE_URL = f"sqlite:///{DB_PATH_CLEAN}"
 
 
