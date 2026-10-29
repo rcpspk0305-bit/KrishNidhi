@@ -7,5 +7,6 @@ paho-mqtt
 google-genai
 python-multipart
 python-dotenv
+httpx
 twilio
 pypdf

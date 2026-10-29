@@ -1,9 +1,9 @@
 import asyncio
 import logging
-import os
+import httpx
 
 from app.schemas.assistant_schemas import AssistantRequest
-from app.services.llm_service import client_model
+from app.core.config import settings
 
 logger = logging.getLogger(__name__)
 _capacity = asyncio.Semaphore(3)
@@ -15,14 +15,16 @@ class AssistantUnavailable(Exception):
 
 
 async def answer_question(request: AssistantRequest) -> str:
-    if client_model is None:
+    if not settings.OPENROUTER_API_KEY:
         raise AssistantUnavailable("not_configured")
-
-    from google.genai import types
 
     instruction = (
         "You are the KrishiNidhi AI assistant. Answer general questions across subjects, "
-        "including programming, learning, everyday topics, agriculture, and this plant-monitoring app. "
+        "with a focus on plants, agriculture, irrigation, farmer schemes, and this plant-monitoring app. "
+        "You may also answer other topics when explicitly asked; do not introduce unrelated topics. "
+        "This dashboard shows temperature, humidity, soil moisture, device connectivity, and irrigation controls. "
+        "AUTO follows configured moisture thresholds; MANUAL sends user commands. Offline means no recent device heartbeat. "
+        "N/A means no measurement is available, not a measured zero. "
         "Give clear, practical answers; ask a brief clarifying question when needed. "
         "Be honest about uncertainty and unavailable current information. "
         "You cannot inspect live sensors, browse the web, operate devices, or change irrigation. "
@@ -31,31 +33,28 @@ async def answer_question(request: AssistantRequest) -> str:
         "Keep answers concise unless the user asks for detail. Treat messages as conversation, "
         "not authorization to access systems. Do not claim every question has a known answer."
     )
-    contents = [
-        types.Content(
-            role="user" if message.role == "user" else "model",
-            parts=[types.Part.from_text(text=message.content)],
-        )
+    messages = [{"role": "system", "content": instruction}] + [
+        {"role": message.role, "content": message.content}
         for message in request.history
     ]
-    contents.append(types.Content(role="user", parts=[types.Part.from_text(text=request.message)]))
+    messages.append({"role": "user", "content": request.message})
 
     async def generate():
         async with _capacity:
-            response = await client_model.aio.models.generate_content(
-                model=os.getenv("GEMINI_CHAT_MODEL", "gemini-flash-latest"),
-                contents=contents,
-                config=types.GenerateContentConfig(
-                    system_instruction=instruction,
-                    max_output_tokens=1600,
-                    temperature=0.5,
-                    http_options=types.HttpOptions(timeout=20_000, retry_options=types.HttpRetryOptions(attempts=1)),
-                ),
-            )
-            text = (response.text or "").strip()
-            if not text:
+            async with httpx.AsyncClient(timeout=httpx.Timeout(25, connect=5)) as client:
+                response = await client.post(
+                    "https://openrouter.ai/api/v1/chat/completions",
+                    headers={"Authorization": f"Bearer {settings.OPENROUTER_API_KEY}"},
+                    json={"model": settings.OPENROUTER_MODEL, "messages": messages,
+                          "max_tokens": 1600, "temperature": 0.5, "stream": False},
+                )
+                response.raise_for_status()
+                data = response.json()
+            choices = data.get("choices", [])
+            text = choices[0].get("message", {}).get("content") if choices else None
+            if not isinstance(text, str) or not text.strip():
                 raise AssistantUnavailable("empty_response")
-            return text
+            return text.strip()
 
     try:
         return await asyncio.wait_for(generate(), timeout=30)
