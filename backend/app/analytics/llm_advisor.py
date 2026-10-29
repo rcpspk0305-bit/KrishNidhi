@@ -21,6 +21,12 @@ def generate_natural_language_summary(
         moisture = latest_metrics.get("soil_moisture")
         temperature = latest_metrics.get("temperature")
         humidity = latest_metrics.get("humidity")
+        if moisture is None and temperature is None and humidity is None:
+            if language == "te":
+                return f"{plant_name}: ఇంకా సెన్సర్ సమాచారం అందలేదు. పరికరం విద్యుత్ సరఫరా, వై-ఫై కనెక్షన్‌ను తనిఖీ చేయండి."
+            if language == "hi":
+                return f"{plant_name}: अभी सेंसर जानकारी नहीं मिली है। उपकरण की बिजली और वाई-फ़ाई कनेक्शन जाँचें।"
+            return f"{plant_name}: no sensor readings are available yet. Check the device power and Wi-Fi connection."
         if language == "te":
             return f"{plant_name}: నేల తేమ {moisture if moisture is not None else 'అందుబాటులో లేదు'}%, ఉష్ణోగ్రత {temperature if temperature is not None else 'అందుబాటులో లేదు'}°C, గాలిలో తేమ {humidity if humidity is not None else 'అందుబాటులో లేదు'}%. ఇవి సెన్సర్ సమాచారం ఆధారంగా ఇచ్చిన సూచనలు."
         if language == "hi":
@@ -32,7 +38,7 @@ def generate_natural_language_summary(
             f"and relative humidity is {latest_metrics.get('humidity', 'N/A')}%."
         )
 
-    if not api_key:
+    if not api_key or all(value is None for key, value in latest_metrics.items() if key != "current_vpd_kpa"):
         return fallback_summary()
 
     try:

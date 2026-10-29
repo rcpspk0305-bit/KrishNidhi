@@ -10,7 +10,10 @@ from app.services import assistant_service
 
 
 @pytest.fixture
-def assistant_client():
+def assistant_client(monkeypatch):
+    from app.api.v1 import assistant
+    from app.services.assistant_budget import AssistantBudget
+    monkeypatch.setattr(assistant, "admission", AssistantBudget())
     application = FastAPI()
     application.include_router(router, prefix="/api/v1")
     with TestClient(application) as client:
@@ -60,3 +63,37 @@ def test_provider_error_does_not_expose_internal_details(assistant_client, monke
 ])
 def test_invalid_or_unbounded_requests_are_rejected(assistant_client, payload):
     assert assistant_client.post("/api/v1/assistant/chat", json=payload).status_code == 422
+
+
+def test_budget_bounds_client_rate_and_global_spending():
+    from app.services.assistant_budget import AssistantBudget
+    current = [1000.0]
+    budget = AssistantBudget(per_minute=2, daily_limit=3, clock=lambda: current[0])
+    assert budget.admit("first") is None
+    assert budget.admit("first") is None
+    assert budget.admit("first") == 60
+    assert budget.admit("second") is None
+    assert budget.admit("third") is not None
+    current[0] = 86400
+    assert budget.admit("first") is None
+
+
+def test_rate_limit_returns_retry_after_before_calling_model(assistant_client, monkeypatch):
+    from app.api.v1 import assistant
+    from app.services.assistant_budget import AssistantBudget
+    monkeypatch.setattr(assistant, "admission", AssistantBudget(per_minute=1))
+    generate = AsyncMock(return_value="Hello")
+    monkeypatch.setattr(assistant, "answer_question", generate)
+    assert assistant_client.post("/api/v1/assistant/chat", json={"message": "Hi"}).status_code == 200
+    response = assistant_client.post("/api/v1/assistant/chat", json={"message": "Hi"})
+    assert response.status_code == 429
+    assert int(response.headers["Retry-After"]) > 0
+    assert generate.await_count == 1
+
+
+@pytest.mark.parametrize("language,expected", [("en", "no sensor readings"), ("te", "సెన్సర్ సమాచారం"), ("hi", "सेंसर जानकारी")])
+def test_missing_sensor_summary_is_localized_without_provider_calls(monkeypatch, language, expected):
+    from app.analytics.llm_advisor import generate_natural_language_summary
+    monkeypatch.delenv("GEMINI_API_KEY", raising=False)
+    result = generate_natural_language_summary("Monstera", {}, {"temperature": None, "humidity": None, "soil_moisture": None}, language=language)
+    assert expected in result

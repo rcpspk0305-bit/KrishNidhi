@@ -49,6 +49,7 @@ async def answer_question(request: AssistantRequest) -> str:
                     system_instruction=instruction,
                     max_output_tokens=1600,
                     temperature=0.5,
+                    http_options=types.HttpOptions(timeout=20_000, retry_options=types.HttpRetryOptions(attempts=1)),
                 ),
             )
             text = (response.text or "").strip()
