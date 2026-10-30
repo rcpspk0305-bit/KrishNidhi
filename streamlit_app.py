@@ -700,7 +700,7 @@ if app_mode == "🌿 Smart Plant Station":
                     "Timestamp": r.timestamp,
                     "Temperature (°C)": r.temperature,
                     "Humidity (%)": r.humidity,
-                    "Soil Moisture (%)": r.soil_moisture if r.soil_moisture is not None else 48.0,
+                    "Soil Moisture (%)": r.soil_moisture,
                     "pH": r.ph,
                     "Rainfall (mm)": r.rainfall,
                     "Nitrogen": r.n,
@@ -708,6 +708,9 @@ if app_mode == "🌿 Smart Plant Station":
                     "Potassium": r.k
                 })
             df = pd.DataFrame(data_list)
+            # ESP8266 packets omit rainfall; keep missing measurements as numeric gaps.
+            for column in ("Temperature (°C)", "Humidity (%)", "Soil Moisture (%)", "Rainfall (mm)"):
+                df[column] = pd.to_numeric(df[column], errors="coerce").astype(float)
             
             fig = px.line(
                 df, 

@@ -1,15 +1,16 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, Field, ConfigDict
 from typing import List, Optional
 
 class SensorData(BaseModel):
-    N: float
-    P: float
-    K: float
-    temperature: float
-    humidity: float
-    ph: float
-    rainfall: float
-    tds: float
+    model_config = ConfigDict(allow_inf_nan=False)
+    N: float = Field(ge=0, le=1000)
+    P: float = Field(ge=0, le=1000)
+    K: float = Field(ge=0, le=1000)
+    temperature: float = Field(ge=-40, le=80)
+    humidity: float = Field(ge=0, le=100)
+    ph: float = Field(ge=0, le=14)
+    rainfall: float = Field(ge=0, le=10000)
+    tds: float = Field(ge=0, le=10000)
 
 class IoTTelemetryInput(BaseModel):
     temperature: Optional[float] = None

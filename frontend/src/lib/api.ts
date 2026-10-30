@@ -1,7 +1,7 @@
 import axios from "axios";
 import { DashboardResponse } from "@/types/dashboard";
 
-const API_BASE = "http://localhost:8000";
+const API_BASE = process.env.NEXT_PUBLIC_LEGACY_API_URL || "/backend";
 
 export const getDashboardWindow = async (windowName: string): Promise<DashboardResponse> => {
   const response = await axios.get(`${API_BASE}/dashboard/windows/${windowName}`);

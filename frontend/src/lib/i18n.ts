@@ -5,6 +5,16 @@ export const localeTags = { en: "en-IN", te: "te-IN", hi: "hi-IN" };
 
 // English source messages map to Telugu and Hindi. Runtime values and API IDs stay unchanged.
 export const messages: Record<string, readonly [string, string]> = {
+  "Soil moisture forecast": ["నేల తేమ అంచనా", "मिट्टी की नमी का पूर्वानुमान"],
+  "Estimated moisture in 1 hour": ["ఒక గంటలో అంచనా తేమ", "एक घंटे में अनुमानित नमी"],
+  "Time to minimum moisture": ["కనిష్ఠ తేమకు సమయం", "न्यूनतम नमी तक समय"],
+  "Forecast unavailable": ["అంచనా అందుబాటులో లేదు", "पूर्वानुमान उपलब्ध नहीं है"],
+  "Sensor coverage": ["సెన్సార్ సమాచారం లభ్యత", "सेंसर डेटा की उपलब्धता"],
+  "USB sensors connected. Pump control is unavailable; relay held OFF.": ["USB సెన్సార్లు అనుసంధానమయ్యాయి. పంపు నియంత్రణ అందుబాటులో లేదు; రిలే ఆఫ్‌లో ఉంది.", "USB सेंसर जुड़े हैं। पंप नियंत्रण उपलब्ध नहीं है; रिले बंद रखा गया है।"],
+  "USB relay OFF": ["USB రిలే ఆఫ్", "USB रिले बंद"],
+  "Device reported": ["పరికరం నివేదించింది", "डिवाइस द्वारा बताया गया"],
+  "Relay held OFF": ["రిలే ఆఫ్‌లో ఉంది", "रिले बंद रखा गया है"],
+  "Firmware configured": ["ఫర్మ్‌వేర్‌లో అమర్చబడింది", "फ़र्मवेयर में निर्धारित"],
   "Command {1} applied: Relay = {2}": [
     "ఆదేశం {1} అమలైంది: రిలే = {2}",
     "निर्देश {1} लागू हुआ: रिले = {2}",

@@ -158,13 +158,25 @@ class AnalyticsMetrics(BaseModel):
     total_watering_seconds_24h: int = 0
     dry_down_rate_pct_per_hr: Optional[float] = None
 
+class MoistureForecast(BaseModel):
+    status: str
+    method: str
+    sample_count: int
+    dry_down_rate_pct_per_hr: Optional[float] = None
+    moisture_in_1h_pct: Optional[float] = None
+    hours_until_threshold: Optional[float] = None
+    residual_mae_pct: Optional[float] = None
+    reason: str
+
 class AnalyticsResponse(BaseModel):
     device_id: str
     window_hours: int
     metrics: AnalyticsMetrics
     status_summary: str
+    forecast: Optional[MoistureForecast] = None
 
 class RecommendationResponse(BaseModel):
+    forecast: Optional[MoistureForecast] = None
     language: str = "en"
     device_id: str
     plant_name: str

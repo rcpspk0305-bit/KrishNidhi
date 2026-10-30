@@ -2,6 +2,7 @@ import math
 from typing import List, Dict, Any, Optional
 from datetime import datetime, timezone, timedelta
 from app.models.db_models import PlantProfile, SensorReading, Alert
+from app.analytics.forecast import forecast_moisture
 
 def calculate_vpd(temp_c: float, humidity_pct: float) -> float:
     """
@@ -36,7 +37,7 @@ class PlantHealthEngine:
 
         if not latest_reading:
             return {
-                "health_score": 50,
+                "health_score": 0,
                 "status": "No Telemetry",
                 "health_status": "Needs Attention",
                 "severity": "medium",
@@ -49,13 +50,17 @@ class PlantHealthEngine:
                 "recommended_actions": ["Check ESP8266 power supply and Wi-Fi connection."],
                 "observations": ["No sensor data received yet from the device."],
                 "recommendations": ["Check ESP8266 power supply and Wi-Fi connection."],
-                "confidence": 0.50,
+                "confidence": 0.0,
                 "limitations": "Awaiting first telemetry packet from physical hardware.",
             }
 
         temp = latest_reading.temperature
         humidity = latest_reading.humidity
         soil_moisture = latest_reading.soil_moisture
+        available_sensors = sum(value is not None for value in (temp, humidity, soil_moisture))
+        if available_sensors < 3:
+            observations.append("Some sensor readings are missing; health assessment is incomplete.")
+            recommendations.append("Check sensor wiring and wait for complete telemetry before relying on this assessment.")
 
         # 1. Soil Moisture Assessment
         min_moisture = profile.preferred_moisture_min or 30.0
@@ -132,17 +137,11 @@ class PlantHealthEngine:
             else:
                 observations.append(f"Vapor Pressure Deficit is balanced at {vpd:.2f} kPa.")
 
-        # 4. Dry-Down Rate Estimation over recent history
-        if len(history) >= 4:
-            oldest = history[-1]
-            newest = history[0]
-            if oldest.timestamp and newest.timestamp and oldest.soil_moisture is not None and newest.soil_moisture is not None:
-                duration_hrs = (newest.timestamp - oldest.timestamp).total_seconds() / 3600.0
-                if duration_hrs > 0.5:
-                    moisture_delta = oldest.soil_moisture - newest.soil_moisture
-                    rate = moisture_delta / duration_hrs
-                    if rate > 0.1:
-                        observations.append(f"Soil dry-down rate is ~{rate:.2f}% moisture loss per hour.")
+        # Use the same robust fit for the narrative and the forecast card.
+        forecast = forecast_moisture(history, min_moisture)
+        rate = forecast['dry_down_rate_pct_per_hr']
+        if rate is not None and rate > 0.1:
+            observations.append(f"Estimated soil dry-down rate is {rate:.2f}% moisture loss per hour.")
 
         # 5. Active Alerts Penalty
         for alert in active_alerts:
@@ -158,7 +157,7 @@ class PlantHealthEngine:
 
         # Final score normalization
         health_score = max(0, min(100, health_score))
-        if health_score >= 80 and status not in ["Needs Water", "Over-watered"]:
+        if health_score >= 80 and status not in ["Needs Water", "Over-watered", "Critical Alert"] and severity == "low":
             status = "Optimal"
             severity = "low"
         elif health_score < 60 and status == "Optimal":
@@ -174,9 +173,13 @@ class PlantHealthEngine:
 
         # Compute assessments
         env_cond = f"{temp:.1f}°C, {humidity:.0f}% RH" if temp is not None and humidity is not None else "Sensor reading in progress"
-        moisture_eval = f"{soil_moisture:.1f}% ({'below target' if soil_moisture is not None and soil_moisture < min_moisture else 'optimal' if soil_moisture is not None and soil_moisture <= max_moisture else 'saturated' if soil_moisture is not None else 'N/A'})"
-        temp_eval = f"{temp:.1f}°C ({'optimal' if temp is not None and min_temp <= temp <= max_temp else 'warm' if temp is not None and temp > max_temp else 'cool' if temp is not None else 'N/A'})"
-        humid_eval = f"{humidity:.0f}% RH ({'optimal' if humidity is not None and 40 <= humidity <= 80 else 'abnormal' if humidity is not None else 'N/A'})"
+        moisture_eval = "Unavailable" if soil_moisture is None else f"{soil_moisture:.1f}% ({'below target' if soil_moisture < min_moisture else 'optimal' if soil_moisture <= max_moisture else 'above target'})"
+        temp_eval = "Unavailable" if temp is None else f"{temp:.1f}°C ({'optimal' if min_temp <= temp <= max_temp else 'warm' if temp > max_temp else 'cool'})"
+        humid_eval = "Unavailable" if humidity is None else f"{humidity:.0f}% RH ({'optimal' if 40 <= humidity <= 80 else 'abnormal'})"
+        if available_sensors == 0:
+            status, severity, health_score = "Sensor Data Missing", "medium", 0
+        elif available_sensors < 3 and status == "Optimal":
+            status, severity = "Incomplete Assessment", "medium"
 
         return {
             "health_score": health_score,
@@ -192,6 +195,6 @@ class PlantHealthEngine:
             "recommended_actions": recommendations,
             "observations": observations,
             "recommendations": recommendations,
-            "confidence": 0.95,
-            "limitations": "Deterministic assessment based on calibrated soil moisture, DHT11 microclimate data, and botanical reference parameters. Does not replace lab soil testing.",
+            "confidence": round(available_sensors / 3, 2),
+            "limitations": "Rule-based assessment, not a trained diagnosis. The confidence field reports sensor coverage, not predictive accuracy. Calibration and fresh telemetry are required; this does not replace lab soil testing.",
         }

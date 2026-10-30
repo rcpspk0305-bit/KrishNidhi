@@ -1,6 +1,3 @@
-WIFI_SSID = "YOUR_WIFI_NAME"
-WIFI_PASSWORD = "YOUR_WIFI_PASSWORD"
-
 # IP address of the computer hosting FastAPI (LAN reachable IP)
 API_BASE_URL = "http://192.168.0.194:8000"
 
@@ -9,7 +6,7 @@ DEVICE_ID = "plant-01"
 DEVICE_TOKEN = "replace-with-a-long-random-secret"
 
 # Replace these after calibrating your sensor
-SOIL_DRY_RAW = 850
+SOIL_DRY_RAW = 1024
 SOIL_WET_RAW = 350
 
 # Many relay modules are active LOW

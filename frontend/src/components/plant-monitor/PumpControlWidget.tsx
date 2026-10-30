@@ -23,12 +23,14 @@ export default function PumpControlWidget({
   pumpRuntimeSeconds,
 }: Props) {
   const { t, intlLocale } = useLanguage();
+  const sensorOnly = process.env.NEXT_PUBLIC_SENSOR_ONLY === "true";
 
   const [submitting, setSubmitting] = useState(false);
   const [pendingAction, setPendingAction] = useState<string | null>(null);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
   const handleModeChange = async (newMode: "AUTO" | "MANUAL" | "OFF") => {
+    if (sensorOnly) return;
     if (newMode === currentMode) return;
     setSubmitting(true);
     setPendingAction(`Switching operating mode to ${newMode}`);
@@ -53,6 +55,7 @@ export default function PumpControlWidget({
   };
 
   const handleTogglePump = async () => {
+    if (sensorOnly) return;
     if (currentMode !== "MANUAL") {
       setErrorMsg(
         "Manual pump actuation is restricted to MANUAL mode. Please switch modes first.",
@@ -139,6 +142,12 @@ export default function PumpControlWidget({
         </div>
       </div>
 
+      {sensorOnly && (
+        <p className="p-3 rounded-xl border text-sm" role="status">
+          {t("USB sensors connected. Pump control is unavailable; relay held OFF.")}
+        </p>
+      )}
+
       {/* Error Message Alert */}
       {errorMsg && (
         <div
@@ -196,7 +205,7 @@ export default function PumpControlWidget({
                   key={m}
                   type="button"
                   onClick={() => handleModeChange(m)}
-                  disabled={submitting}
+                  disabled={submitting || sensorOnly}
                   className="flex-1 py-2 px-3 text-xs font-semibold rounded-lg transition-all"
                   style={{
                     backgroundColor: isSelected ? "#ffffff" : "transparent",
@@ -207,7 +216,7 @@ export default function PumpControlWidget({
                     border: isSelected
                       ? "1px solid var(--border-default)"
                       : "1px solid transparent",
-                    cursor: submitting ? "not-allowed" : "pointer",
+                    cursor: submitting || sensorOnly ? "not-allowed" : "pointer",
                   }}
                 >
                   {t(m)}
@@ -228,14 +237,14 @@ export default function PumpControlWidget({
           <button
             type="button"
             onClick={handleTogglePump}
-            disabled={submitting || currentMode !== "MANUAL"}
+            disabled={sensorOnly || submitting || currentMode !== "MANUAL"}
             className={
               confirmedPumpOn ? "btn-terracotta w-full" : "btn-primary w-full"
             }
             style={{
-              opacity: currentMode !== "MANUAL" ? 0.45 : 1,
+              opacity: sensorOnly || currentMode !== "MANUAL" ? 0.45 : 1,
               cursor:
-                currentMode === "MANUAL" && !submitting
+                !sensorOnly && currentMode === "MANUAL" && !submitting
                   ? "pointer"
                   : "not-allowed",
             }}
@@ -317,7 +326,7 @@ export default function PumpControlWidget({
                 : "var(--forest-700)",
             }}
           >
-            {t("Firmware Verified")}
+            {t(sensorOnly ? "USB relay OFF" : "Device reported")}
           </strong>
         </div>
       </div>
@@ -333,7 +342,7 @@ export default function PumpControlWidget({
         <span className="flex items-center gap-1.5">
           <Clock size={13} style={{ color: "var(--gold-600)" }} />
           <span>
-            {t("Watchdog:")} <strong>{t("15s limit")}</strong>
+            {t("Watchdog:")} <strong>{t(sensorOnly ? "Relay held OFF" : "Firmware configured")}</strong>
           </span>
         </span>
         <span className="flex items-center gap-1.5">

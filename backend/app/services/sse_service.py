@@ -17,9 +17,6 @@ class SSEBroadcaster:
             if device_id not in self.listeners:
                 self.listeners[device_id] = set()
             self.listeners[device_id].add(queue)
-            # Also register to "all" if subscribing to specific device
-            if device_id != "all":
-                self.listeners["all"].add(queue)
         return queue
 
     async def unsubscribe(self, queue: asyncio.Queue, device_id: str = "all"):

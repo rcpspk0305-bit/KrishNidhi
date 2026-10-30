@@ -32,7 +32,7 @@ class DeviceTelemetry(BaseModel):
     soil_moisture_pct: Optional[float] = Field(default=None, ge=0, le=100)
     motion: bool = False
     pump_on: bool = False
-    mode: Literal["auto", "manual"] = "auto"
+    mode: Literal["auto", "manual", "off"] = "auto"
 
 
 class DeviceControl(BaseModel):

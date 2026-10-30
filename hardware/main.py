@@ -3,10 +3,15 @@ import time
 import gc
 import dht
 import ujson
-import requests
+try:
+    import urequests as requests
+except ImportError:
+    import requests
+
 
 from machine import Pin, ADC
 from config import *
+from command_protocol import apply_command
 
 # GPIO mappings from the finalized wiring
 soil_sensor = ADC(0)  # A0
@@ -134,7 +139,8 @@ def api_request(method, path, payload=None):
     if not wifi.isconnected():
         return None
 
-    headers = {"Content-Type": "application/json", "X-Device-Token": DEVICE_TOKEN}
+    headers = {"Content-Type": "application/json", "X-Device-Token": DEVICE_TOKEN,
+               "X-Device-Key": DEVICE_TOKEN}
 
     response = None
 
@@ -178,6 +184,8 @@ def main():
     manual_requested = False
 
     last_command_id = None
+    boot_poll = True
+    pending_ack = None
     last_report = None
     last_reconnect = None
     last_press = None
@@ -214,37 +222,33 @@ def main():
             last_report = now
             data = read_sensors()
 
-            # Fetch remote commands
-            if wifi.isconnected():
+            # Retry an ACK without applying the same command twice.
+            if pending_ack and wifi.isconnected() and not pump_on:
+                pending_ack[1]["confirmed_state"] = pump_on
+                if api_request("POST", "/api/v1/devices/" + DEVICE_ID + "/commands/" + pending_ack[0] + "/ack", pending_ack[1]):
+                    pending_ack = None
+
+            # Do not spend a network timeout polling while the pump is active.
+            command = None
+            command_status = None
+            if wifi.isconnected() and not pump_on and not pending_ack:
                 command = api_request(
-                    "GET", "/api/device/command?device_id=" + DEVICE_ID
+                    "GET", "/api/v1/devices/" + DEVICE_ID + "/commands"
                 )
-
                 if command is not None:
-                    command_id = command.get("command_id")
-
-                    if isinstance(command_id, int):
-                        if last_command_id is None:
-                            # Ignore a stale ON command at boot
-                            last_command_id = command_id
-
-                        elif command_id > last_command_id:
-                            last_command_id = command_id
-                            new_mode = command.get("mode")
-
-                            if new_mode in ("auto", "manual"):
-                                mode = new_mode
-                                manual_requested = (
-                                    command.get("pump_on") is True
-                                    if mode == "manual"
-                                    else False
-                                )
+                    command = command.get("command") if command.get("has_command") else None
+                    if command and command.get("command_id") != last_command_id:
+                        mode, manual_requested, command_status = apply_command(
+                            command, mode, manual_requested, not boot_poll
+                        )
+                        last_command_id = command.get("command_id")
+                    boot_poll = False
 
             # Safety and control decisions
             now = time.ticks_ms()
             moisture = data["soil_moisture_pct"]
 
-            if moisture is None:
+            if moisture is None or mode == "off":
                 wanted = False
 
             elif mode == "manual":
@@ -288,8 +292,20 @@ def main():
             print("Telemetry:", data)
 
             if wifi.isconnected():
-                result = api_request("POST", "/api/device/telemetry", data)
-                print("Published:", result is not None)
+                if command and command_status:
+                    expected = str(command.get("value")).lower() == "true"
+                    if command.get("action") == "SET_PUMP" and pump_on != expected:
+                        command_status = "REJECTED"
+                    pending_ack = (command["command_id"], {
+                        "status": command_status,
+                        "confirmed_state": pump_on,
+                        "reason": "Relay GPIO state after firmware safety checks; no flow sensor fitted",
+                    })
+                    if api_request("POST", "/api/v1/devices/" + DEVICE_ID + "/commands/" + pending_ack[0] + "/ack", pending_ack[1]):
+                        pending_ack = None
+                if not pump_on:
+                    result = api_request("POST", "/api/device/telemetry", data)
+                    print("Published:", result is not None)
 
         # Enforce pump safety between reporting intervals
         if pump_on:
@@ -317,19 +333,19 @@ def main():
         time.sleep_ms(100)
 
 
-try:
-    main()
-except KeyboardInterrupt:
-    relay.value(RELAY_OFF)
-    if lcd:
-        lcd.print_line(0, "Plant Station")
-        lcd.print_line(1, "Relay SAFE / OFF")
-    print("Stopped")
-except Exception as error:
-    relay.value(RELAY_OFF)
-    if lcd:
-        lcd.print_line(0, "System Error")
-        lcd.print_line(1, "Relay SAFE / OFF")
-    print("Fatal error:", error)
-    raise
-
+if __name__ in ("__main__", "__mp_main__"):
+    try:
+        main()
+    except KeyboardInterrupt:
+        relay.value(RELAY_OFF)
+        if lcd:
+            lcd.print_line(0, "Plant Station")
+            lcd.print_line(1, "Relay SAFE / OFF")
+        print("Stopped")
+    except Exception as error:
+        relay.value(RELAY_OFF)
+        if lcd:
+            lcd.print_line(0, "System Error")
+            lcd.print_line(1, "Relay SAFE / OFF")
+        print("Fatal error:", error)
+        raise

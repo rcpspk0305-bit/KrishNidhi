@@ -12,6 +12,7 @@ from app.schemas.plant_monitor_schemas import (
     RecommendationResponse,
 )
 from app.analytics.rule_engine import PlantHealthEngine, calculate_vpd
+from app.analytics.forecast import forecast_moisture
 from app.analytics.llm_advisor import generate_natural_language_summary
 
 router = APIRouter(prefix="/devices", tags=["Analytics & AI"])
@@ -79,16 +80,9 @@ def get_device_analytics(
         .count()
     )
 
-    # Dry-down rate estimation
-    dry_rate = None
-    if len(soils) >= 2:
-        newest_soil = soils[0]
-        oldest_soil = soils[-1]
-        time_diff_hours = (readings[0].timestamp - readings[-1].timestamp).total_seconds() / 3600.0
-        if time_diff_hours > 0.5:
-            delta = oldest_soil - newest_soil
-            if delta > 0:
-                dry_rate = round(delta / time_diff_hours, 2)
+    profile = db.query(PlantProfile).filter(PlantProfile.device_id == device_id).first()
+    forecast = forecast_moisture(readings, profile.preferred_moisture_min if profile else 30)
+    dry_rate = forecast['dry_down_rate_pct_per_hr']
 
     metrics = AnalyticsMetrics(
         avg_temperature=avg_temp,
@@ -112,6 +106,7 @@ def get_device_analytics(
         window_hours=hours,
         metrics=metrics,
         status_summary=summary,
+        forecast=forecast,
     )
 
 @router.get("/{device_id}/recommendations", response_model=RecommendationResponse)
@@ -150,9 +145,9 @@ def get_plant_recommendations(device_id: str, db: Session = Depends(get_db), lan
 
     history = (
         db.query(SensorReading)
-        .filter(SensorReading.device_id == device_id)
+        .filter(SensorReading.device_id == device_id,
+                SensorReading.timestamp >= datetime.now(timezone.utc) - timedelta(hours=24))
         .order_by(desc(SensorReading.timestamp))
-        .limit(20)
         .all()
     )
 
@@ -170,13 +165,15 @@ def get_plant_recommendations(device_id: str, db: Session = Depends(get_db), lan
         "temperature": latest.temperature if latest else None,
         "humidity": latest.humidity if latest else None,
         "soil_moisture": latest.soil_moisture if latest else None,
-        "current_vpd_kpa": calculate_vpd(latest.temperature, latest.humidity) if latest else None,
+        "current_vpd_kpa": calculate_vpd(latest.temperature, latest.humidity)
+        if latest and latest.temperature is not None and latest.humidity is not None else None,
     }
     ai_summary = generate_natural_language_summary(
         profile.plant_name, evaluation, latest_metrics, language=language
     )
 
     return RecommendationResponse(
+        forecast=forecast_moisture(history, profile.preferred_moisture_min),
         language=language,
         device_id=device_id,
         plant_name=profile.plant_name,

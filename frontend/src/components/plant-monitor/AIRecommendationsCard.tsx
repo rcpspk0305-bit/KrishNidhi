@@ -81,12 +81,27 @@ export default function AIRecommendationsCard({
             <ShieldCheck size={12} className="text-forest-700" />
             <span className="text-[11px]">
               {recommendation
-                ? `${Math.round(recommendation.confidence * 100)}% ${t("Confidence")}`
+                ? `${Math.round(recommendation.confidence * 100)}% ${t("Sensor coverage")}`
                 : t("Awaiting Telemetry")}
             </span>
           </span>
         </div>
       </div>
+
+      {recommendation?.forecast && (
+        <div className="p-4 rounded-xl border text-sm" style={{ borderColor: "var(--border-subtle)" }}>
+          <h4 className="font-semibold">{t("Soil moisture forecast")}</h4>
+          {recommendation.forecast.status === "available" ? (
+            <p>
+              {t("Estimated moisture in 1 hour")}: {recommendation.forecast.moisture_in_1h_pct}%.
+              {recommendation.forecast.hours_until_threshold !== null && (
+                <> {t("Time to minimum moisture")}: {recommendation.forecast.hours_until_threshold} h.</>
+              )}
+            </p>
+          ) : <p>{t("Forecast unavailable")}</p>}
+          <p className="text-xs mt-2" style={{ color: "var(--text-muted)" }}>{t(recommendation.forecast.reason)}</p>
+        </div>
+      )}
 
       {/* AI Contextual Explanation Box */}
       {aiExplanation && (

@@ -66,6 +66,16 @@ export interface PlantAnalytics {
 }
 
 export interface PlantRecommendation {
+  forecast?: {
+    status: string;
+    method: string;
+    sample_count: number;
+    moisture_in_1h_pct: number | null;
+    hours_until_threshold: number | null;
+    dry_down_rate_pct_per_hr: number | null;
+    residual_mae_pct: number | null;
+    reason: string;
+  } | null;
   language?: "en" | "te" | "hi";
   device_id: string;
   plant_name: string;

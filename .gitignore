@@ -62,3 +62,6 @@ next-env.d.ts
 
 # Streamlit
 .streamlit/secrets.toml
+.local-runtime/
+backend/ml/crop-model.json
+frontend/.next-hardware/

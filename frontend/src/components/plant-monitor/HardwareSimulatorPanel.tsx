@@ -58,7 +58,7 @@ export default function HardwareSimulatorPanel({
     const interval = setInterval(async () => {
       try {
         const apiBase =
-          process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api/v1";
+          process.env.NEXT_PUBLIC_API_URL || "/backend/api/v1";
         const res = await fetch(`${apiBase}/devices/${deviceId}/commands`, {
           headers: { "X-Device-Key": "default_secret_key_123" },
         });

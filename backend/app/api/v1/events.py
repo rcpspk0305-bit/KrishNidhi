@@ -16,7 +16,7 @@ async def stream_device_events(device_id: str, request: Request):
     async def event_generator():
         try:
             # Send initial ping event
-            yield f": ping connected to device {id}\n\n"
+            yield f": ping connected to device {device_id}\n\n"
             while True:
                 if await request.is_disconnected():
                     break
@@ -27,7 +27,7 @@ async def stream_device_events(device_id: str, request: Request):
                 except asyncio.TimeoutError:
                     yield ": keepalive heartbeat\n\n"
         finally:
-            await sse_manager.unsubscribe(queue, id)
+            await sse_manager.unsubscribe(queue, device_id)
 
     return StreamingResponse(
         event_generator(),

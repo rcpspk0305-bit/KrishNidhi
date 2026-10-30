@@ -97,7 +97,7 @@ export default function AssistantWidget() {
     setSending(true);
     try {
       const base = (
-        process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api/v1"
+        process.env.NEXT_PUBLIC_API_URL || "/backend/api/v1"
       ).replace(/\/$/, "");
       const response = await fetch(`${base}/assistant/chat`, {
         method: "POST",
