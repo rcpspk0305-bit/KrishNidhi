@@ -45,8 +45,10 @@ def test_get_target_url_default():
 def test_ping_and_wake_already_awake():
     """When app is already awake, it should detect the container without clicking wake button."""
     mock_page = MagicMock()
+    mock_page.frames = []
     # Sleep button not found / not visible
     mock_button = MagicMock()
+    mock_button.first = mock_button
     mock_button.is_visible.return_value = False
     mock_page.locator.return_value = mock_button
 
@@ -66,7 +68,9 @@ def test_ping_and_wake_already_awake():
 def test_ping_and_wake_asleep():
     """When app is asleep, it should click the wake button and wait for the container."""
     mock_page = MagicMock()
+    mock_page.frames = []
     mock_button = MagicMock()
+    mock_button.first = mock_button
     mock_button.is_visible.return_value = True
     mock_page.locator.return_value = mock_button
 
@@ -80,6 +84,70 @@ def test_ping_and_wake_asleep():
     result = keep_alive.wake_streamlit_app(mock_browser, "https://krishnidhi.streamlit.app/", timeout_ms=5000)
     assert result is True
     mock_button.click.assert_called_once()
+
+
+def test_ping_and_wake_already_awake_in_frame():
+    """When app is running inside an iframe, it should detect container via page.frames."""
+    mock_page = MagicMock()
+    mock_button = MagicMock()
+    mock_button.first = mock_button
+    mock_button.is_visible.return_value = False
+    mock_page.locator.return_value = mock_button
+    mock_page.wait_for_selector.side_effect = Exception("Not found in top page")
+
+    mock_frame = MagicMock()
+    mock_container = MagicMock()
+    mock_container.is_visible.return_value = True
+    mock_frame.wait_for_selector.return_value = mock_container
+    mock_page.frames = [mock_frame]
+
+    mock_browser = MagicMock()
+    mock_browser.new_page.return_value = mock_page
+
+    result = keep_alive.wake_streamlit_app(mock_browser, "https://krishnidhi.streamlit.app/", timeout_ms=5000)
+    assert result is True
+
+
+def test_ping_and_wake_already_awake_http_fallback():
+    """When container selectors time out but page returned HTTP 200 without sleep button, app is awake."""
+    mock_page = MagicMock()
+    mock_page.frames = []
+    mock_button = MagicMock()
+    mock_button.first = mock_button
+    mock_button.is_visible.return_value = False
+    mock_page.locator.return_value = mock_button
+    mock_page.wait_for_selector.side_effect = Exception("Timeout waiting for container")
+
+    mock_response = MagicMock()
+    mock_response.status = 200
+    mock_page.goto.return_value = mock_response
+
+    mock_browser = MagicMock()
+    mock_browser.new_page.return_value = mock_page
+
+    result = keep_alive.wake_streamlit_app(mock_browser, "https://krishnidhi.streamlit.app/", timeout_ms=5000)
+    assert result is True
+
+
+def test_ping_and_wake_server_error():
+    """When server returns 503 and container is missing, it should report failure."""
+    mock_page = MagicMock()
+    mock_page.frames = []
+    mock_button = MagicMock()
+    mock_button.first = mock_button
+    mock_button.is_visible.return_value = False
+    mock_page.locator.return_value = mock_button
+    mock_page.wait_for_selector.side_effect = Exception("Timeout waiting for container")
+
+    mock_response = MagicMock()
+    mock_response.status = 503
+    mock_page.goto.return_value = mock_response
+
+    mock_browser = MagicMock()
+    mock_browser.new_page.return_value = mock_page
+
+    result = keep_alive.wake_streamlit_app(mock_browser, "https://krishnidhi.streamlit.app/", timeout_ms=5000)
+    assert result is False
 
 
 def test_ping_and_wake_failure():

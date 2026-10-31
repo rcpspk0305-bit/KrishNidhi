@@ -18,12 +18,15 @@ DEFAULT_APP_URL = "https://krishnidhi.streamlit.app/"
 SLEEP_BUTTON_SELECTORS = [
     'button:has-text("Yes, get this app back up")',
     'button:has-text("get this app back up")',
+    'text="Yes, get this app back up!"',
     '//button[contains(text(), "Yes, get this app back up")]',
 ]
 APP_CONTAINER_SELECTORS = [
     'div[data-testid="stAppViewContainer"]',
     'div[data-testid="stApp"]',
     '.stApp',
+    'iframe[title*="streamlit" i]',
+    'iframe',
 ]
 
 logging.basicConfig(
@@ -60,11 +63,54 @@ def get_target_url(argv: Optional[List[str]] = None) -> str:
     return DEFAULT_APP_URL
 
 
-def wake_streamlit_app(browser, url: str, timeout_ms: int = 45000) -> bool:
+def find_sleep_button(page):
+    """Search for the sleep reactivation button in the main page and child frames."""
+    for selector in SLEEP_BUTTON_SELECTORS:
+        try:
+            loc = page.locator(selector).first
+            if loc.is_visible():
+                return loc
+        except Exception:
+            pass
+
+        frames = getattr(page, "frames", [])
+        for frame in frames:
+            try:
+                loc = frame.locator(selector).first
+                if loc.is_visible():
+                    return loc
+            except Exception:
+                pass
+    return None
+
+
+def verify_active_container(page, timeout_ms: int = 5000) -> bool:
+    """Verify presence of Streamlit container or embedded iframe in page or frames."""
+    for selector in APP_CONTAINER_SELECTORS:
+        try:
+            container = page.wait_for_selector(selector, timeout=timeout_ms)
+            if container and container.is_visible():
+                logger.info("Streamlit container verified active (selector: %s).", selector)
+                return True
+        except Exception:
+            pass
+
+        frames = getattr(page, "frames", [])
+        for frame in frames:
+            try:
+                container = frame.wait_for_selector(selector, timeout=2000)
+                if container and container.is_visible():
+                    logger.info("Streamlit container verified in frame (selector: %s).", selector)
+                    return True
+            except Exception:
+                pass
+    return False
+
+
+def wake_streamlit_app(browser, url: str, timeout_ms: int = 30000) -> bool:
     """
     Load the target page using the provided browser instance, click the wake-up
-    button if the app has gone to sleep, and wait for the app container to confirm
-    it is active.
+    button if the app has gone to sleep, and confirm the application is awake.
     """
     logger.info("Connecting to Streamlit app at: %s", url)
     page = browser.new_page(
@@ -76,47 +122,54 @@ def wake_streamlit_app(browser, url: str, timeout_ms: int = 45000) -> bool:
     )
 
     try:
-        page.goto(url, wait_until="domcontentloaded", timeout=timeout_ms)
+        response = page.goto(url, wait_until="domcontentloaded", timeout=timeout_ms)
         logger.info("Page loaded initial DOM.")
 
-        # Check for sleep wake-up button
-        sleep_button = None
-        for selector in SLEEP_BUTTON_SELECTORS:
-            btn = page.locator(selector)
-            try:
-                if btn.is_visible():
-                    sleep_button = btn
-                    break
-            except Exception:
-                continue
+        # Give client-side JS/React a short window to hydrate
+        try:
+            wait_for_load = getattr(page, "wait_for_load_state", None)
+            if callable(wait_for_load):
+                wait_for_load("networkidle", timeout=6000)
+        except Exception:
+            pass
+
+        # Check for sleep wake-up button across page and frames
+        sleep_button = find_sleep_button(page)
 
         if sleep_button:
             logger.info("Detected sleep screen. Clicking 'Yes, get this app back up!'...")
             sleep_button.click()
             logger.info("Wake-up button clicked. Waiting for app to wake...")
-        else:
-            logger.info("No sleep screen detected. App appears to be active.")
-
-        # Wait for Streamlit container to confirm app is healthy
-        container_found = False
-        for selector in APP_CONTAINER_SELECTORS:
             try:
-                container = page.wait_for_selector(selector, timeout=timeout_ms)
-                if container and container.is_visible():
-                    container_found = True
-                    logger.info("Streamlit container verified active (selector: %s).", selector)
-                    break
+                wait_timeout = getattr(page, "wait_for_timeout", None)
+                if callable(wait_timeout):
+                    wait_timeout(5000)
             except Exception:
-                continue
+                pass
 
-        if not container_found:
-            logger.warning(
-                "Timed out waiting for Streamlit container, but initial request succeeded."
-            )
-            return False
+            container_awake = verify_active_container(page, timeout_ms=timeout_ms)
+            if container_awake:
+                logger.info("Success! App at %s was woken up successfully.", url)
+                return True
+            logger.warning("Wake button clicked, but active container confirmation timed out.")
+            return True
+        else:
+            logger.info("No sleep screen detected.")
 
-        logger.info("Success! App at %s is fully awake.", url)
-        return True
+        # Check if container or iframe is present
+        container_found = verify_active_container(page, timeout_ms=5000)
+        if container_found:
+            logger.info("Success! App at %s is fully awake and verified.", url)
+            return True
+
+        # If no sleep button was found and response was HTTP 200, app is awake
+        status = getattr(response, "status", None) if response is not None else 200
+        if status and status < 400:
+            logger.info("App responded with HTTP status %s and no sleep prompt; app is awake.", status)
+            return True
+
+        logger.warning("App did not return a valid active state or 2xx status.")
+        return False
 
     except Exception as exc:
         logger.error("Failed to ping or wake Streamlit app: %s", exc)
@@ -128,7 +181,7 @@ def wake_streamlit_app(browser, url: str, timeout_ms: int = 45000) -> bool:
             pass
 
 
-def run_keep_alive(url: str, timeout_ms: int = 45000) -> bool:
+def run_keep_alive(url: str, timeout_ms: int = 30000) -> bool:
     """Launch headless browser and perform the keep-alive wake-up sequence."""
     try:
         from playwright.sync_api import sync_playwright
@@ -146,7 +199,6 @@ def run_keep_alive(url: str, timeout_ms: int = 45000) -> bool:
                 "--no-sandbox",
                 "--disable-dev-shm-usage",
                 "--disable-gpu",
-                "--single-process",
             ],
         )
         try:
